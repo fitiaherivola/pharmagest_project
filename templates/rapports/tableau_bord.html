@@ -2,92 +2,686 @@
 {% load permissions_extras %}
 {% block titre %}Tableau de bord{% endblock %}
 {% block entete %}Tableau de bord{% endblock %}
-{% block sous_entete %}Activite du {{ aujourdhui|date:"d/m/Y" }}{% endblock %}
+{% block sous_entete %}Centre de contrôle · Activité du {{ aujourdhui|date:"d/m/Y" }}{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<style>
+    :root {
+        --tb-teal: #0d9488;
+        --tb-bleu: #4f7cff;
+        --tb-or: #f59e0b;
+        --tb-rouge: #ef4444;
+        --tb-violet: #8b5cf6;
+    }
+
+    /* Bandeau d'accueil */
+    .tb-hero {
+        position: relative;
+        overflow: hidden;
+        border-radius: 20px;
+        padding: 27px 30px;
+        color: #fff;
+        background: linear-gradient(120deg, #073b39 0%, #0b7f76 52%, #14b8a6 100%);
+        box-shadow: 0 16px 36px rgba(13, 148, 136, .22);
+    }
+
+    .tb-hero::before,
+    .tb-hero::after {
+        content: "";
+        position: absolute;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, .08);
+    }
+
+    .tb-hero::before {
+        width: 260px;
+        height: 260px;
+        top: -130px;
+        right: -50px;
+    }
+
+    .tb-hero::after {
+        width: 170px;
+        height: 170px;
+        bottom: -120px;
+        right: 160px;
+        background: rgba(255, 255, 255, .06);
+    }
+
+    .tb-hero > * {
+        position: relative;
+        z-index: 1;
+    }
+
+    .tb-hero-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 5px 11px;
+        border-radius: 20px;
+        background: rgba(255, 255, 255, .16);
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: 1.1px;
+    }
+
+    .tb-hero-titre {
+        margin: 13px 0 4px;
+        font-size: 24px;
+        font-weight: 800;
+        letter-spacing: -.7px;
+    }
+
+    .tb-hero-sous {
+        margin: 0;
+        color: rgba(255, 255, 255, .76);
+        font-size: 12px;
+    }
+
+    .tb-hero-stat {
+        min-width: 116px;
+        padding: 9px 14px;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, .13);
+        border: 1px solid rgba(255, 255, 255, .14);
+    }
+
+    .tb-hero-stat span {
+        display: block;
+        color: rgba(255, 255, 255, .72);
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .6px;
+    }
+
+    .tb-hero-stat strong {
+        display: block;
+        margin-top: 3px;
+        font-size: 16px;
+        font-weight: 800;
+    }
+
+    .btn-hero {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 17px;
+        border-radius: 11px;
+        background: #fff;
+        color: #08776f;
+        font-size: 12px;
+        font-weight: 800;
+        box-shadow: 0 8px 18px rgba(0, 0, 0, .12);
+        transition: .2s;
+    }
+
+    .btn-hero:hover {
+        color: #07534f;
+        transform: translateY(-2px);
+        box-shadow: 0 12px 22px rgba(0, 0, 0, .16);
+    }
+
+    /* Cartes d'indicateurs */
+    .tb-kpi {
+        position: relative;
+        height: 100%;
+        padding: 18px;
+        background: #fff;
+        border: 1px solid var(--bordure);
+        border-radius: 16px;
+        box-shadow: var(--ombre);
+        overflow: hidden;
+        transition: transform .25s ease, box-shadow .25s ease;
+    }
+
+    .tb-kpi::after {
+        content: "";
+        position: absolute;
+        top: -34px;
+        right: -30px;
+        width: 96px;
+        height: 96px;
+        border-radius: 50%;
+        background: var(--kpi-leger);
+    }
+
+    .tb-kpi:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 14px 30px rgba(20, 55, 65, .11);
+    }
+
+    .tb-kpi > * {
+        position: relative;
+        z-index: 1;
+    }
+
+    .tb-kpi-icone {
+        width: 44px;
+        height: 44px;
+        border-radius: 13px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--kpi-leger);
+        color: var(--kpi-couleur);
+        font-size: 20px;
+    }
+
+    .tb-kpi-tendance {
+        padding: 5px 9px;
+        border-radius: 20px;
+        background: var(--kpi-leger);
+        color: var(--kpi-couleur);
+        font-size: 10px;
+        font-weight: 800;
+    }
+
+    .tb-kpi-valeur {
+        margin-top: 16px;
+        font-size: 25px;
+        font-weight: 800;
+        color: #183c40;
+        letter-spacing: -.9px;
+        line-height: 1.15;
+    }
+
+    .tb-kpi-valeur small {
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0;
+        color: var(--texte-secondaire);
+    }
+
+    .tb-kpi-label {
+        margin-top: 5px;
+        font-size: 10px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: .6px;
+        color: var(--texte-secondaire);
+    }
+
+    .tb-kpi-note {
+        margin-top: 8px;
+        padding-top: 8px;
+        border-top: 1px dashed #e9eff1;
+        font-size: 11px;
+        color: #8c9aa1;
+    }
+
+    .kpi-teal { --kpi-couleur: #0d9488; --kpi-leger: #e7f6f3; }
+    .kpi-bleu { --kpi-couleur: #4f7cff; --kpi-leger: #edf1ff; }
+    .kpi-or { --kpi-couleur: #f59e0b; --kpi-leger: #fff5e3; }
+    .kpi-violet { --kpi-couleur: #8b5cf6; --kpi-leger: #f2edff; }
+    .kpi-rouge { --kpi-couleur: #ef4444; --kpi-leger: #ffeded; }
+    .kpi-cyan { --kpi-couleur: #0891b2; --kpi-leger: #e5f7fb; }
+
+    /* Cartes de graphiques */
+    .tb-carte {
+        height: 100%;
+        background: #fff;
+        border: 1px solid var(--bordure);
+        border-radius: 18px;
+        box-shadow: var(--ombre);
+        overflow: hidden;
+        transition: box-shadow .25s ease;
+    }
+
+    .tb-carte:hover {
+        box-shadow: 0 10px 28px rgba(20, 55, 65, .085);
+    }
+
+    .tb-carte-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 16px 20px 14px;
+        border-bottom: 1px solid #edf1f3;
+    }
+
+    .tb-carte-titre {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        font-size: 13px;
+        font-weight: 800;
+        color: #183c40;
+    }
+
+    .tb-carte-titre i {
+        color: var(--tb-teal);
+        font-size: 16px;
+    }
+
+    .tb-carte-sous {
+        margin: 3px 0 0 25px;
+        font-size: 11px;
+        color: var(--texte-secondaire);
+    }
+
+    .tb-puce {
+        padding: 5px 9px;
+        border-radius: 20px;
+        background: var(--pg-clair);
+        color: var(--pg-fonce);
+        font-size: 10px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: .6px;
+        white-space: nowrap;
+    }
+
+    .tb-carte-corps {
+        padding: 16px 18px 18px;
+    }
+
+    .tb-toile {
+        position: relative;
+        width: 100%;
+        height: 225px;
+    }
+
+    .tb-toile-lg { height: 272px; }
+    .tb-toile-donut { height: 215px; }
+
+    .tb-centre {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        pointer-events: none;
+    }
+
+    .tb-centre strong {
+        font-size: 19px;
+        font-weight: 800;
+        color: #183c40;
+        letter-spacing: -.5px;
+    }
+
+    .tb-centre span {
+        margin-top: 2px;
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .6px;
+        color: var(--texte-secondaire);
+    }
+
+    .tb-vide {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        color: #9aa8ae;
+        font-size: 12px;
+    }
+
+    .tb-carte-pied {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 12px 20px;
+        border-top: 1px solid #edf1f3;
+        background: #fbfdfd;
+        font-size: 11px;
+        color: var(--texte-secondaire);
+    }
+
+    .tb-carte-pied strong {
+        color: #183c40;
+        font-weight: 800;
+    }
+
+    /* Listes d'alertes et tableaux */
+    .tb-alerte-titre {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 13px 18px;
+        font-size: 12px;
+        font-weight: 800;
+        color: #183c40;
+        border-bottom: 1px solid #edf1f3;
+    }
+
+    .tb-alerte-titre i {
+        font-size: 15px;
+    }
+
+    .tb-liste {
+        padding: 5px 18px 10px;
+    }
+
+    .tb-ligne-alerte {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 9px 0;
+        border-bottom: 1px dashed #edf1f3;
+        font-size: 12px;
+    }
+
+    .tb-ligne-alerte:last-child {
+        border-bottom: 0;
+    }
+
+    .tb-ligne-alerte span {
+        color: var(--texte);
+    }
+
+    .tb-ligne-alerte small {
+        display: block;
+        margin-top: 2px;
+        color: var(--texte-secondaire);
+        font-size: 10px;
+    }
+
+    .tb-table thead th {
+        padding: 12px 16px;
+        font-size: 10px;
+    }
+
+    .tb-table tbody td {
+        padding: 11px 16px;
+    }
+
+    .tb-points {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .tb-point {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        display: inline-block;
+    }
+
+    @media (max-width: 575.98px) {
+        .tb-hero { padding: 22px 20px; }
+        .tb-hero-titre { font-size: 19px; }
+        .tb-hero-stat { min-width: 100px; }
+        .tb-toile-lg { height: 235px; }
+        .tb-carte-head { flex-wrap: wrap; }
+    }
+</style>
+{% endblock %}
+
 {% block contenu %}
+
+{{ graphiques.ventes|json_script:"g-ventes" }}
+{{ graphiques.produits|json_script:"g-produits" }}
+{{ graphiques.paiements|json_script:"g-paiements" }}
+{{ graphiques.categories|json_script:"g-categories" }}
+{{ graphiques.stock|json_script:"g-stock" }}
+{{ graphiques.finances|json_script:"g-finances" }}
+
+<section class="tb-hero mb-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-4">
+        <div>
+            <div class="tb-hero-badge"><i class="bi bi-stars"></i> Centre de contrôle</div>
+            <h1 class="tb-hero-titre">Bonjour {{ user.nom_complet|default:"collègue" }}</h1>
+            <p class="tb-hero-sous">Voici l'activité de votre pharmacie en un coup d'œil.</p>
+        </div>
+        <div class="d-flex flex-wrap align-items-center gap-2">
+            <div class="tb-hero-stat">
+                <span>Ventes aujourd'hui</span>
+                <strong>{{ resume.ventes_du_jour|floatformat:0 }} F</strong>
+            </div>
+            <div class="tb-hero-stat">
+                <span>Médicaments actifs</span>
+                <strong>{{ resume.medicaments_actifs }}</strong>
+            </div>
+            {% if user|a_permission:"ventes.add_vente" %}
+                <a class="btn-hero" href="{% url 'ventes:caisse' %}">
+                    <i class="bi bi-cash-coin"></i> Ouvrir la caisse
+                </a>
+            {% endif %}
+        </div>
+    </div>
+</section>
+
 <div class="row g-3 mb-3">
-    <div class="col-sm-6 col-xl-4">
-        <div class="carte h-100"><div class="card-body">
-            <div class="stat-label">Ventes du jour</div>
-            <div class="stat-valeur">{{ resume.ventes_du_jour|floatformat:0 }} FCFA</div>
-            <div class="small text-muted">Chiffre d'affaires valide aujourd'hui</div>
-        </div></div>
+    <div class="col-6 col-lg-3">
+        <div class="tb-kpi kpi-teal">
+            <div class="d-flex justify-content-between align-items-start">
+                <span class="tb-kpi-icone"><i class="bi bi-graph-up-arrow"></i></span>
+                <span class="tb-kpi-tendance"><i class="bi bi-arrow-up-right"></i> Global</span>
+            </div>
+            <div class="tb-kpi-valeur">{{ resume.chiffre_affaires|floatformat:0 }} <small>FCFA</small></div>
+            <div class="tb-kpi-label">Chiffre d'affaires</div>
+            <div class="tb-kpi-note">Toutes les ventes validées</div>
+        </div>
     </div>
-    <div class="col-sm-6 col-xl-4">
-        <div class="carte h-100"><div class="card-body">
-            <div class="stat-label">Encaissements confirmes</div>
-            <div class="stat-valeur">{{ resume.encaissements|floatformat:0 }} FCFA</div>
-            <div class="small text-muted">Paiements confirmes toutes periodes</div>
-        </div></div>
+    <div class="col-6 col-lg-3">
+        <div class="tb-kpi kpi-bleu">
+            <div class="d-flex justify-content-between align-items-start">
+                <span class="tb-kpi-icone"><i class="bi bi-cart-check"></i></span>
+                <span class="tb-kpi-tendance"><i class="bi bi-lightning-charge"></i> Jour</span>
+            </div>
+            <div class="tb-kpi-valeur">{{ resume.ventes_du_jour|floatformat:0 }} <small>FCFA</small></div>
+            <div class="tb-kpi-label">Ventes du jour</div>
+            <div class="tb-kpi-note">Chiffre d'affaires validé</div>
+        </div>
     </div>
-    <div class="col-sm-6 col-xl-4">
-        <div class="carte h-100"><div class="card-body">
-            <div class="stat-label">Marge commerciale</div>
-            <div class="stat-valeur">{{ resume.marge_commerciale|floatformat:0 }} FCFA</div>
-            <div class="small text-muted">Estimee sur les ventes validees</div>
-        </div></div>
+    <div class="col-6 col-lg-3">
+        <div class="tb-kpi kpi-or">
+            <div class="d-flex justify-content-between align-items-start">
+                <span class="tb-kpi-icone"><i class="bi bi-wallet2"></i></span>
+                <span class="tb-kpi-tendance"><i class="bi bi-check2-circle"></i> Confirmé</span>
+            </div>
+            <div class="tb-kpi-valeur">{{ resume.encaissements|floatformat:0 }} <small>FCFA</small></div>
+            <div class="tb-kpi-label">Encaissements</div>
+            <div class="tb-kpi-note">Paiements confirmés</div>
+        </div>
     </div>
-    <div class="col-sm-6 col-xl-4">
-        <div class="carte h-100"><div class="card-body">
-            <div class="stat-label">Valeur du stock</div>
-            <div class="stat-valeur">{{ resume.valeur_stock|floatformat:0 }} FCFA</div>
-            <div class="small text-muted">Lots non perimes, au prix d'achat</div>
-        </div></div>
+    <div class="col-6 col-lg-3">
+        <div class="tb-kpi kpi-violet">
+            <div class="d-flex justify-content-between align-items-start">
+                <span class="tb-kpi-icone"><i class="bi bi-piggy-bank"></i></span>
+                <span class="tb-kpi-tendance"><i class="bi bi-percent"></i> Marge</span>
+            </div>
+            <div class="tb-kpi-valeur">{{ resume.marge_commerciale|floatformat:0 }} <small>FCFA</small></div>
+            <div class="tb-kpi-label">Marge commerciale</div>
+            <div class="tb-kpi-note">Sur les ventes validées</div>
+        </div>
     </div>
-    <div class="col-sm-6 col-xl-4">
-        <div class="carte h-100"><div class="card-body">
-            <div class="stat-label">Medicaments actifs</div>
-            <div class="stat-valeur">{{ resume.medicaments_actifs }}</div>
-            <div class="small text-muted"><a href="{% url 'medicaments:liste' %}">Voir le catalogue</a></div>
-        </div></div>
+    <div class="col-6 col-lg-3">
+        <div class="tb-kpi kpi-cyan">
+            <div class="d-flex justify-content-between align-items-start">
+                <span class="tb-kpi-icone"><i class="bi bi-box-seam"></i></span>
+                <span class="tb-kpi-tendance"><i class="bi bi-layers"></i> Stock</span>
+            </div>
+            <div class="tb-kpi-valeur">{{ resume.valeur_stock|floatformat:0 }} <small>FCFA</small></div>
+            <div class="tb-kpi-label">Valeur du stock</div>
+            <div class="tb-kpi-note">Lots non périmés, prix d'achat</div>
+        </div>
     </div>
-    <div class="col-sm-6 col-xl-4">
-        <div class="carte h-100"><div class="card-body">
-            <div class="stat-label">Chiffre d'affaires global</div>
-            <div class="stat-valeur">{{ resume.chiffre_affaires|floatformat:0 }} FCFA</div>
-            <div class="small text-muted">Ventes validees</div>
-        </div></div>
+    <div class="col-6 col-lg-3">
+        <div class="tb-kpi kpi-rouge">
+            <div class="d-flex justify-content-between align-items-start">
+                <span class="tb-kpi-icone"><i class="bi bi-capsule-pill"></i></span>
+                <span class="tb-kpi-tendance"><i class="bi bi-collection"></i> Catalogue</span>
+            </div>
+            <div class="tb-kpi-valeur">{{ resume.medicaments_actifs }}</div>
+            <div class="tb-kpi-label">Médicaments actifs</div>
+            <div class="tb-kpi-note"><a href="{% url 'medicaments:liste' %}">Voir le catalogue</a></div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-3">
+    <div class="col-xl-8">
+        <div class="tb-carte h-100">
+            <div class="tb-carte-head">
+                <div>
+                    <div class="tb-carte-titre"><i class="bi bi-activity"></i> Évolution des ventes</div>
+                    <div class="tb-carte-sous">Chiffre d'affaires des 7 derniers jours</div>
+                </div>
+                <a class="tb-puce" href="{% url 'rapports:ventes' %}">Rapport détaillé</a>
+            </div>
+            <div class="tb-carte-corps">
+                <div class="tb-toile tb-toile-lg">
+                    <canvas id="graphique-ventes"></canvas>
+                </div>
+            </div>
+            <div class="tb-carte-pied">
+                <span>Moyenne quotidienne <strong>{{ resume.ventes_du_jour|floatformat:0 }} F</strong></span>
+                <span>Pic observé <strong>{{ max_vente_jour|floatformat:0 }} F</strong></span>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-4">
+        <div class="tb-carte h-100">
+            <div class="tb-carte-head">
+                <div>
+                    <div class="tb-carte-titre"><i class="bi bi-pie-chart"></i> Modes de paiement</div>
+                    <div class="tb-carte-sous">Répartition des encaissements</div>
+                </div>
+                <span class="tb-puce">Temps réel</span>
+            </div>
+            <div class="tb-carte-corps">
+                <div class="tb-toile tb-toile-donut">
+                    <canvas id="graphique-paiements"></canvas>
+                    <div class="tb-centre">
+                        <strong>{{ resume.encaissements|floatformat:0 }}</strong>
+                        <span>FCFA encaissés</span>
+                    </div>
+                </div>
+            </div>
+            <div class="tb-carte-pied">
+                <span class="tb-points"><i class="tb-point" style="background:var(--tb-teal)"></i> Espèces</span>
+                <span class="tb-points"><i class="tb-point" style="background:var(--tb-bleu)"></i> Mobile money</span>
+                <span class="tb-points"><i class="tb-point" style="background:var(--tb-or)"></i> Autre</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-3">
+    <div class="col-xl-4">
+        <div class="tb-carte h-100">
+            <div class="tb-carte-head">
+                <div>
+                    <div class="tb-carte-titre"><i class="bi bi-bar-chart"></i> Top médicaments</div>
+                    <div class="tb-carte-sous">Unités vendées (top 5)</div>
+                </div>
+                <span class="tb-puce">Ventes</span>
+            </div>
+            <div class="tb-carte-corps">
+                <div class="tb-toile">
+                    <canvas id="graphique-produits"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-4">
+        <div class="tb-carte h-100">
+            <div class="tb-carte-head">
+                <div>
+                    <div class="tb-carte-titre"><i class="bi bi-diagram-3"></i> Catégories</div>
+                    <div class="tb-carte-sous">Médicaments actifs par famille</div>
+                </div>
+                <span class="tb-puce">Catalogue</span>
+            </div>
+            <div class="tb-carte-corps">
+                <div class="tb-toile">
+                    <canvas id="graphique-categories"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-4">
+        <div class="tb-carte h-100">
+            <div class="tb-carte-head">
+                <div>
+                    <div class="tb-carte-titre"><i class="bi bi-pie-chart-fill"></i> Santé du stock</div>
+                    <div class="tb-carte-sous">État des lots en rayon</div>
+                </div>
+                <a class="tb-puce" href="{% url 'stock:alertes' %}">Alertes</a>
+            </div>
+            <div class="tb-carte-corps">
+                <div class="tb-toile tb-toile-donut">
+                    <canvas id="graphique-stock"></canvas>
+                    <div class="tb-centre">
+                        <strong id="total-lots">{{ resume.medicaments_actifs }}</strong>
+                        <span>Références actives</span>
+                    </div>
+                </div>
+            </div>
+            <div class="tb-carte-pied">
+                <span class="tb-points"><i class="tb-point" style="background:#10b981"></i> Sains</span>
+                <span class="tb-points"><i class="tb-point" style="background:var(--tb-or)"></i> Proches</span>
+                <span class="tb-points"><i class="tb-point" style="background:var(--tb-bleu)"></i> Bloqués</span>
+                <span class="tb-points"><i class="tb-point" style="background:var(--tb-rouge)"></i> Périmés</span>
+            </div>
+        </div>
     </div>
 </div>
 
 <div class="row g-3">
     <div class="col-xl-8">
-        <div class="carte">
-            <div class="card-header py-3 d-flex justify-content-between align-items-center">
-                <span><i class="bi bi-graph-up"></i> Ventes des 7 derniers jours</span>
-                <a class="btn btn-sm btn-outline-secondary" href="{% url 'rapports:ventes' %}">Rapport detaille</a>
+        <div class="tb-carte">
+            <div class="tb-carte-head">
+                <div>
+                    <div class="tb-carte-titre"><i class="bi bi-box-arrow-in-up-right"></i> Vue financière</div>
+                    <div class="tb-carte-sous">Comparaison des indicateurs clés</div>
+                </div>
+                <a class="tb-puce" href="{% url 'rapports:ventes' %}">Détails</a>
             </div>
-            <div class="card-body">
-                {% for jour in ventes_7_jours %}
-                    <div class="d-flex align-items-center gap-2 mb-2">
-                        <div class="text-muted small" style="width:70px">{{ jour.jour|date:"d/m" }}</div>
-                        <div class="mini-barre flex-grow-1">
-                            <span style="width:{% widthratio jour.total max_vente_jour 100 %}%"></span>
-                        </div>
-                        <div class="small fw-semibold text-end" style="width:110px">{{ jour.total|floatformat:0 }} F</div>
-                    </div>
-                {% endfor %}
+            <div class="tb-carte-corps">
+                <div class="tb-toile">
+                    <canvas id="graphique-finances"></canvas>
+                </div>
             </div>
         </div>
 
-        <div class="carte mt-3">
-            <div class="card-header py-3 d-flex justify-content-between align-items-center">
-                <span><i class="bi bi-receipt"></i> Ventes recentes</span>
+        <div class="tb-carte mt-3">
+            <div class="tb-carte-head">
+                <div>
+                    <div class="tb-carte-titre"><i class="bi bi-receipt"></i> Ventes récentes</div>
+                    <div class="tb-carte-sous">Dernières transactions enregistrées</div>
+                </div>
                 {% if user|a_permission:"ventes.add_vente" %}
-                    <a class="btn btn-sm btn-principal" href="{% url 'ventes:caisse' %}">Ouvrir la caisse</a>
+                    <a class="tb-puce" href="{% url 'ventes:caisse' %}">Nouvelle vente</a>
                 {% endif %}
             </div>
             <div class="table-responsive">
-                <table class="table table-sm align-middle mb-0">
-                    <thead><tr><th>Numero</th><th>Date</th><th>Client</th><th>Caissier</th><th class="text-end">Total</th><th></th></tr></thead>
+                <table class="table tb-table align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Numéro</th>
+                            <th>Date</th>
+                            <th>Client</th>
+                            <th>Caissier</th>
+                            <th class="text-end">Total</th>
+                            <th></th>
+                        </tr>
+                    </thead>
                     <tbody>
                     {% for v in ventes_recentes %}
                         <tr>
-                            <td>{{ v.numero }}</td>
+                            <td class="fw-semibold">{{ v.numero }}</td>
                             <td>{{ v.date_vente|date:"d/m H:i" }}</td>
                             <td>{{ v.client|default:"Comptoir" }}</td>
                             <td>{{ v.caissier.username }}</td>
-                            <td class="text-end">{{ v.total|floatformat:0 }}</td>
-                            <td class="text-end"><a class="btn btn-sm btn-outline-secondary" href="{% url 'ventes:detail' v.pk %}"><i class="bi bi-eye"></i></a></td>
+                            <td class="text-end fw-bold">{{ v.total|floatformat:0 }}</td>
+                            <td class="text-end">
+                                <a class="btn btn-sm btn-outline-secondary" href="{% url 'ventes:detail' v.pk %}">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                            </td>
                         </tr>
                     {% empty %}
                         <tr><td colspan="6" class="text-center text-muted py-4">Aucune vente.</td></tr>
@@ -99,79 +693,365 @@
     </div>
 
     <div class="col-xl-4">
-        <div class="carte">
-            <div class="card-header py-3"><i class="bi bi-trophy"></i> Produits les plus vendus</div>
-            <div class="table-responsive">
-                <table class="table table-sm align-middle mb-0">
-                    <tbody>
-                    {% for produit in produits_plus_vendus %}
-                        <tr>
-                            <td>{{ produit.medicament__nom_commercial }}</td>
-                            <td class="text-end fw-semibold">{{ produit.quantite }}</td>
-                        </tr>
-                    {% empty %}
-                        <tr><td class="text-center text-muted py-3">Pas encore de ventes.</td></tr>
-                    {% endfor %}
-                    </tbody>
-                </table>
+        <div class="tb-carte mb-3">
+            <div class="tb-alerte-titre text-warning">
+                <i class="bi bi-exclamation-triangle"></i> Stocks faibles
+                <a class="ms-auto small text-decoration-none" href="{% url 'stock:alertes' %}">Tout voir</a>
+            </div>
+            <div class="tb-liste">
+                {% for m in stocks_faibles %}
+                    <div class="tb-ligne-alerte">
+                        <span>{{ m.nom_commercial }}<small>Seuil : {{ m.seuil_alerte }}</small></span>
+                        <span class="badge bg-warning text-dark">{{ m.stock_disponible }}</span>
+                    </div>
+                {% empty %}
+                    <div class="tb-ligne-alerte text-muted">Aucun stock faible.</div>
+                {% endfor %}
             </div>
         </div>
 
-        <div class="carte mt-3">
-            <div class="card-header py-3 d-flex justify-content-between">
-                <span><i class="bi bi-exclamation-triangle text-warning"></i> Stocks faibles</span>
-                <a class="small" href="{% url 'stock:alertes' %}">Tout voir</a>
+        <div class="tb-carte mb-3">
+            <div class="tb-alerte-titre text-warning">
+                <i class="bi bi-calendar-x"></i> Péremptions proches
+                <a class="ms-auto small text-decoration-none" href="{% url 'rapports:peremptions' %}">Tout voir</a>
             </div>
-            <div class="table-responsive">
-                <table class="table table-sm align-middle mb-0">
-                    <tbody>
-                    {% for m in stocks_faibles %}
-                        <tr>
-                            <td>{{ m.nom_commercial }}</td>
-                            <td class="text-end"><span class="badge bg-warning text-dark">{{ m.stock_disponible }} / {{ m.seuil_alerte }}</span></td>
-                        </tr>
-                    {% empty %}
-                        <tr><td class="text-center text-muted py-3">Aucun stock faible.</td></tr>
-                    {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <div class="carte mt-3">
-            <div class="card-header py-3 d-flex justify-content-between">
-                <span><i class="bi bi-calendar-x text-warning"></i> Peremptions proches</span>
-                <a class="small" href="{% url 'rapports:peremptions' %}">Tout voir</a>
-            </div>
-            <div class="table-responsive">
-                <table class="table table-sm align-middle mb-0">
-                    <tbody>
-                    {% for lot in proches_peremption %}
-                        <tr>
-                            <td>{{ lot.medicament.nom_commercial }}<div class="small text-muted">Lot {{ lot.numero_lot }}</div></td>
-                            <td class="text-end"><span class="badge bg-warning text-dark">J-{{ lot.jours_avant_peremption }}</span></td>
-                        </tr>
-                    {% empty %}
-                        <tr><td class="text-center text-muted py-3">Aucune peremption proche.</td></tr>
-                    {% endfor %}
-                    </tbody>
-                </table>
+            <div class="tb-liste">
+                {% for lot in proches_peremption %}
+                    <div class="tb-ligne-alerte">
+                        <span>{{ lot.medicament.nom_commercial }}<small>Lot {{ lot.numero_lot }}</small></span>
+                        <span class="badge bg-warning text-dark">J-{{ lot.jours_avant_peremption }}</span>
+                    </div>
+                {% empty %}
+                    <div class="tb-ligne-alerte text-muted">Aucune péremption proche.</div>
+                {% endfor %}
             </div>
         </div>
 
         {% if perimes %}
-        <div class="carte mt-3 border-danger">
-            <div class="card-header py-3"><i class="bi bi-x-octagon text-danger"></i> Lots perimes en stock</div>
-            <ul class="list-group list-group-flush">
+        <div class="tb-carte" style="border-color:#f6caca">
+            <div class="tb-alerte-titre text-danger">
+                <i class="bi bi-x-octagon"></i> Lots périmés en stock
+            </div>
+            <div class="tb-liste">
                 {% for lot in perimes %}
-                    <li class="list-group-item d-flex justify-content-between small">
-                        <span>{{ lot.medicament.nom_commercial }} - {{ lot.numero_lot }}</span>
+                    <div class="tb-ligne-alerte">
+                        <span>{{ lot.medicament.nom_commercial }}<small>Lot {{ lot.numero_lot }}</small></span>
                         <span class="badge bg-danger">{{ lot.quantite_disponible }}</span>
-                    </li>
+                    </div>
                 {% endfor %}
-            </ul>
+            </div>
         </div>
         {% endif %}
     </div>
 </div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    (function () {
+        const lire = function (id) {
+            const element = document.getElementById(id);
+            if (!element) return { labels: [], valeurs: [] };
+            try {
+                return JSON.parse(element.textContent);
+            } catch (erreur) {
+                return { labels: [], valeurs: [] };
+            }
+        };
+
+        const fcfa = function (valeur) {
+            return Number(valeur).toLocaleString('fr-FR') + ' FCFA';
+        };
+
+        const nombre = function (valeur) {
+            return Number(valeur).toLocaleString('fr-FR');
+        };
+
+        const creer = function (id, donnees, configuration) {
+            const canvas = document.getElementById(id);
+            if (!canvas) return;
+            if (!donnees.labels.length) {
+                canvas.style.display = 'none';
+                const centre = canvas.parentElement.querySelector('.tb-centre');
+                if (centre) centre.style.display = 'none';
+                const vide = document.createElement('div');
+                vide.className = 'tb-vide';
+                vide.innerHTML = '<i class="bi bi-inboxes"></i> Aucune donnée pour le moment';
+                canvas.parentElement.appendChild(vide);
+                return;
+            }
+            new Chart(canvas, configuration);
+        };
+
+        const grille = { color: '#eef3f5', drawTicks: false };
+        const axe = { grid: grille, border: { display: false }, ticks: { color: '#8b9aa1', font: { size: 10 } } };
+
+        Chart.defaults.font.family = "'DM Sans', sans-serif";
+        Chart.defaults.color = '#71828a';
+
+        const ventes = lire('g-ventes');
+        const contexteVentes = document.getElementById('graphique-ventes');
+        let remplissageVentes = 'rgba(13, 148, 136, .12)';
+        if (contexteVentes && ventes.labels.length) {
+            const ctx = contexteVentes.getContext('2d');
+            const degrade = ctx.createLinearGradient(0, 0, 0, 280);
+            degrade.addColorStop(0, 'rgba(13, 148, 136, .32)');
+            degrade.addColorStop(1, 'rgba(13, 148, 136, 0)');
+            remplissageVentes = degrade;
+        }
+
+        creer('graphique-ventes', ventes, {
+            type: 'line',
+            data: {
+                labels: ventes.labels,
+                datasets: [{
+                    label: 'Ventes',
+                    data: ventes.valeurs,
+                    borderColor: '#0d9488',
+                    backgroundColor: remplissageVentes,
+                    borderWidth: 3,
+                    fill: true,
+                    tension: .42,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    pointBackgroundColor: '#ffffff',
+                    pointBorderColor: '#0d9488',
+                    pointBorderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#183c40',
+                        padding: 12,
+                        cornerRadius: 10,
+                        callbacks: {
+                            label: function (contexte) {
+                                return ' ' + fcfa(contexte.parsed.y);
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: { grid: { display: false }, border: { display: false }, ticks: { color: '#8b9aa1', font: { size: 10 } } },
+                    y: Object.assign({}, axe, {
+                        beginAtZero: true,
+                        ticks: {
+                            color: '#8b9aa1',
+                            font: { size: 10 },
+                            callback: function (valeur) {
+                                return valeur >= 1000 ? (valeur / 1000) + 'k' : valeur;
+                            }
+                        }
+                    })
+                }
+            }
+        });
+
+        const paiements = lire('g-paiements');
+        creer('graphique-paiements', paiements, {
+            type: 'doughnut',
+            data: {
+                labels: paiements.labels,
+                datasets: [{
+                    data: paiements.valeurs,
+                    backgroundColor: ['#0d9488', '#4f7cff', '#f59e0b'],
+                    borderWidth: 0,
+                    hoverOffset: 10,
+                    spacing: 3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '74%',
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#183c40',
+                        padding: 12,
+                        cornerRadius: 10,
+                        callbacks: {
+                            label: function (contexte) {
+                                return ' ' + contexte.label + ' : ' + fcfa(contexte.parsed);
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        const produits = lire('g-produits');
+        creer('graphique-produits', produits, {
+            type: 'bar',
+            data: {
+                labels: produits.labels,
+                datasets: [{
+                    data: produits.valeurs,
+                    backgroundColor: '#0d9488',
+                    borderRadius: 8,
+                    barThickness: 15
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#183c40',
+                        padding: 12,
+                        cornerRadius: 10,
+                        callbacks: {
+                            label: function (contexte) {
+                                return ' ' + nombre(contexte.parsed.x) + ' unités vendues';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: Object.assign({}, axe, { beginAtZero: true, ticks: { precision: 0, color: '#8b9aa1', font: { size: 10 } } }),
+                    y: { grid: { display: false }, border: { display: false }, ticks: { color: '#435960', font: { size: 10 } } }
+                }
+            }
+        });
+
+        const categories = lire('g-categories');
+        creer('graphique-categories', categories, {
+            type: 'polarArea',
+            data: {
+                labels: categories.labels,
+                datasets: [{
+                    data: categories.valeurs,
+                    backgroundColor: [
+                        'rgba(13, 148, 136, .72)',
+                        'rgba(79, 124, 255, .72)',
+                        'rgba(245, 158, 11, .72)',
+                        'rgba(139, 92, 246, .72)',
+                        'rgba(8, 145, 178, .72)',
+                        'rgba(239, 68, 68, .68)'
+                    ],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { boxWidth: 8, boxHeight: 8, usePointStyle: true, padding: 12, font: { size: 9 } }
+                    },
+                    tooltip: {
+                        backgroundColor: '#183c40',
+                        padding: 12,
+                        cornerRadius: 10,
+                        callbacks: {
+                            label: function (contexte) {
+                                return ' ' + contexte.label + ' : ' + contexte.parsed + ' médicaments';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    r: {
+                        ticks: { display: false, precision: 0 },
+                        grid: { color: '#eef3f5' },
+                        angleLines: { color: '#eef3f5' },
+                        pointLabels: { display: false }
+                    }
+                }
+            }
+        });
+
+        const stock = lire('g-stock');
+        const totalLots = document.getElementById('total-lots');
+        if (totalLots) {
+            totalLots.textContent = nombre(stock.valeurs.reduce(function (somme, valeur) {
+                return somme + Number(valeur);
+            }, 0));
+        }
+        creer('graphique-stock', stock, {
+            type: 'doughnut',
+            data: {
+                labels: stock.labels,
+                datasets: [{
+                    data: stock.valeurs,
+                    backgroundColor: ['#10b981', '#f59e0b', '#4f7cff', '#ef4444'],
+                    borderWidth: 0,
+                    hoverOffset: 10,
+                    spacing: 3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '74%',
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#183c40',
+                        padding: 12,
+                        cornerRadius: 10,
+                        callbacks: {
+                            label: function (contexte) {
+                                return ' ' + contexte.label + ' : ' + nombre(contexte.parsed) + ' lots';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        const finances = lire('g-finances');
+        creer('graphique-finances', finances, {
+            type: 'bar',
+            data: {
+                labels: finances.labels,
+                datasets: [{
+                    data: finances.valeurs,
+                    backgroundColor: ['#0d9488', '#4f7cff', '#f59e0b', '#8b5cf6'],
+                    borderRadius: 9,
+                    maxBarThickness: 56
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#183c40',
+                        padding: 12,
+                        cornerRadius: 10,
+                        callbacks: {
+                            label: function (contexte) {
+                                return ' ' + fcfa(contexte.parsed.y);
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: { grid: { display: false }, border: { display: false }, ticks: { color: '#435960', font: { size: 10 } } },
+                    y: Object.assign({}, axe, {
+                        beginAtZero: true,
+                        ticks: {
+                            color: '#8b9aa1',
+                            font: { size: 10 },
+                            callback: function (valeur) {
+                                return valeur >= 1000 ? (valeur / 1000) + 'k' : valeur;
+                            }
+                        }
+                    })
+                }
+            }
+        });
+    })();
+</script>
 {% endblock %}

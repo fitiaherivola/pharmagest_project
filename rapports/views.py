@@ -1,4 +1,5 @@
 from datetime import date
+from decimal import Decimal
 
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
@@ -24,6 +25,9 @@ def tableau_bord(request):
     categories = ServiceStatistiques.medicaments_par_categorie(6)
     sante_stock = ServiceStatistiques.sante_stock()
     max_vente_jour = max((jour["total"] for jour in ventes_7_jours), default=0)
+    moyenne_ventes = sum(
+        (jour["total"] for jour in ventes_7_jours), Decimal("0")
+    ) / len(ventes_7_jours)
 
     graphiques = {
         "ventes": {
@@ -75,6 +79,7 @@ def tableau_bord(request):
             "ventes_recentes": Vente.objects.select_related("client", "caissier")[:8],
             "ventes_7_jours": ventes_7_jours,
             "max_vente_jour": max_vente_jour,
+            "moyenne_ventes": moyenne_ventes,
             "aujourdhui": date.today(),
         },
     )

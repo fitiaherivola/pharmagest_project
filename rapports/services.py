@@ -1,12 +1,12 @@
-from datetime import date
+from datetime import timedelta
 from decimal import Decimal
 
-from django.db.models import DecimalField, ExpressionWrapper, F, Sum
+from django.db.models import Count, Sum
 from django.db.models.functions import Coalesce
 from django.utils import timezone
 
 from achats.models import LigneReception
-from medicaments.models import Medicament
+from medicaments.models import Categorie, Medicament
 from stock.models import LotStock
 from ventes.models import LigneVente, Paiement, Vente
 
@@ -96,8 +96,6 @@ class ServiceStatistiques:
 
     @staticmethod
     def ventes_par_jour(n=7):
-        from datetime import timedelta
-
         resultat = []
         aujourdhui = timezone.localdate()
         for decalage in range(n - 1, -1, -1):
@@ -107,6 +105,52 @@ class ServiceStatistiques:
             ).aggregate(total=Coalesce(Sum("total"), Decimal("0")))["total"]
             resultat.append({"jour": jour, "total": total})
         return resultat
+
+    @staticmethod
+    def paiements_par_mode():
+        libelles = dict(Paiement.MODES)
+        resultat = (
+            Paiement.objects.filter(statut=Paiement.CONFIRME)
+            .values("mode")
+            .annotate(total=Coalesce(Sum("montant"), Decimal("0")))
+            .order_by("-total")
+        )
+        return [
+            {
+                "mode": libelles.get(ligne["mode"], ligne["mode"]),
+                "total": ligne["total"],
+            }
+            for ligne in resultat
+        ]
+
+    @staticmethod
+    def medicaments_par_categorie(n=6):
+        return list(
+            Categorie.objects.filter(medicaments__statut=Medicament.ACTIF)
+            .annotate(total=Count("medicaments"))
+            .order_by("-total", "nom")
+            .values("nom", "total")[:n]
+        )
+
+    @staticmethod
+    def sante_stock():
+        aujourdhui = timezone.localdate()
+        lots = LotStock.objects.filter(quantite_disponible__gt=0)
+        perimes = lots.filter(date_peremption__lt=aujourdhui).count()
+        bloques = lots.filter(
+            est_bloque=True, date_peremption__gte=aujourdhui
+        ).count()
+        proches = lots.filter(
+            est_bloque=False,
+            date_peremption__gte=aujourdhui,
+            date_peremption__lte=aujourdhui + timedelta(days=30),
+        ).count()
+        return {
+            "sains": max(lots.count() - perimes - bloques - proches, 0),
+            "proches": proches,
+            "bloques": bloques,
+            "perimes": perimes,
+        }
 
     @staticmethod
     def valeur_stock():

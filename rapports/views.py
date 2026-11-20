@@ -17,14 +17,57 @@ from .services import ServiceStatistiques, ServiceStock
 
 @login_required
 def tableau_bord(request):
+    resume = ServiceStatistiques.resume()
     produits = ServiceStatistiques.produits_plus_vendus(5)
     ventes_7_jours = ServiceStatistiques.ventes_par_jour(7)
+    paiements = ServiceStatistiques.paiements_par_mode()
+    categories = ServiceStatistiques.medicaments_par_categorie(6)
+    sante_stock = ServiceStatistiques.sante_stock()
     max_vente_jour = max((jour["total"] for jour in ventes_7_jours), default=0)
+
+    graphiques = {
+        "ventes": {
+            "labels": [jour["jour"].strftime("%d/%m") for jour in ventes_7_jours],
+            "valeurs": [float(jour["total"]) for jour in ventes_7_jours],
+        },
+        "produits": {
+            "labels": [p["medicament__nom_commercial"] for p in produits],
+            "valeurs": [int(p["quantite"]) for p in produits],
+        },
+        "paiements": {
+            "labels": [p["mode"] for p in paiements],
+            "valeurs": [float(p["total"]) for p in paiements],
+        },
+        "categories": {
+            "labels": [c["nom"] for c in categories],
+            "valeurs": [int(c["total"]) for c in categories],
+        },
+        "stock": {
+            "labels": ["Lots sains", "Proches peremption", "Bloques", "Perimes"],
+            "valeurs": [
+                sante_stock["sains"],
+                sante_stock["proches"],
+                sante_stock["bloques"],
+                sante_stock["perimes"],
+            ],
+        },
+        "finances": {
+            "labels": ["CA global", "Encaissements", "Marge brute", "Valeur stock"],
+            "valeurs": [
+                float(resume["chiffre_affaires"]),
+                float(resume["encaissements"]),
+                float(resume["marge_commerciale"]),
+                float(resume["valeur_stock"]),
+            ],
+        },
+    }
+
     return render(
         request,
         "rapports/tableau_bord.html",
         {
-            "resume": ServiceStatistiques.resume(),
+            "graphiques": graphiques,
+            "resume": resume,
             "stocks_faibles": ServiceStock.alertes_stock_faible()[:8],
             "proches_peremption": ServiceStock.lots_proches_peremption(30)[:8],
             "perimes": ServiceStock.lots_perimes()[:5],

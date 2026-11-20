@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block titre %}{{ titre }}{% endblock %}
+{% block entete %}{{ titre }}{% endblock %}
+{% block contenu %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="carte">
+            <div class="card-body p-4">
+                <form method="post" enctype="multipart/form-data" novalidate>
+                    {% csrf_token %}
+                    {% include "includes/champs_formulaire.html" %}
+                    <div class="d-flex gap-2 mt-4">
+                        <button class="btn btn-principal" type="submit"><i class="bi bi-check-lg"></i> Enregistrer</button>
+                        <a class="btn btn-outline-secondary" href="{% url 'medicaments:liste' %}">Annuler</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

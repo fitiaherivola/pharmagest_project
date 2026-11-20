@@ -1,0 +1,973 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PharmaGest - Diagrammes de classes</title>
+<style>
+/* PharmaGest - Diagrammes de classes */
+:root {
+  --bg: #f4f7f9;
+  --carte: #ffffff;
+  --texte: #1c2b33;
+  --discret: #5d6f7a;
+  --bord: #cfdbe2;
+  --primaire: #0f8b8d;
+  --primaire-fonce: #0a5f61;
+  --entete: #0f8b8d;
+  --entete-ref: #8aa0ab;
+  --ajout: #e08e0b;
+  --lien: #3a4d58;
+  --ombre: 0 2px 8px rgba(20, 50, 60, 0.12);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #11191d;
+    --carte: #19252b;
+    --texte: #e6eef2;
+    --discret: #9fb2bc;
+    --bord: #2e4048;
+    --primaire: #2bb3b5;
+    --primaire-fonce: #5fd0d2;
+    --entete: #13787a;
+    --entete-ref: #44585f;
+    --lien: #9fb2bc;
+    --ombre: 0 2px 8px rgba(0, 0, 0, 0.5);
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--texte);
+  font-family: "Segoe UI", Roboto, Arial, sans-serif;
+  line-height: 1.5;
+}
+
+header.page {
+  background: linear-gradient(135deg, #0a5f61, #0f8b8d);
+  color: #fff;
+  padding: 32px 24px;
+}
+header.page h1 { margin: 0 0 6px; font-size: 1.9rem; }
+header.page p { margin: 0; opacity: 0.9; }
+
+nav.sommaire {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--carte);
+  border-bottom: 1px solid var(--bord);
+  padding: 10px 24px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+}
+nav.sommaire a {
+  color: var(--primaire-fonce);
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+nav.sommaire a:hover { text-decoration: underline; }
+
+main { max-width: 1280px; margin: 0 auto; padding: 24px; }
+
+section.diagramme {
+  background: var(--carte);
+  border: 1px solid var(--bord);
+  border-radius: 12px;
+  padding: 20px 22px 24px;
+  margin-bottom: 28px;
+  box-shadow: var(--ombre);
+}
+section.diagramme h2 {
+  margin: 0 0 4px;
+  color: var(--primaire-fonce);
+  font-size: 1.3rem;
+}
+section.diagramme > .intro { margin: 0 0 18px; color: var(--discret); }
+
+h3.sous-titre {
+  margin: 22px 0 8px;
+  font-size: 0.95rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--discret);
+}
+
+/* Rangées de classes */
+.rangee {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0;
+  margin-bottom: 18px;
+  row-gap: 18px;
+}
+
+/* Boîte de classe UML */
+.classe {
+  width: 270px;
+  border: 2px solid var(--entete);
+  border-radius: 6px;
+  background: var(--carte);
+  overflow: hidden;
+  box-shadow: var(--ombre);
+  align-self: flex-start;
+  font-size: 0.82rem;
+}
+.classe .nom {
+  background: var(--entete);
+  color: #fff;
+  text-align: center;
+  font-weight: 700;
+  font-size: 0.95rem;
+  padding: 7px 8px;
+}
+.classe .nom small {
+  display: block;
+  font-weight: 400;
+  font-size: 0.72rem;
+  opacity: 0.85;
+  font-style: italic;
+}
+.classe ul {
+  list-style: none;
+  margin: 0;
+  padding: 6px 10px;
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 0.76rem;
+}
+.classe ul + ul { border-top: 1px solid var(--entete); }
+.classe li { padding: 1px 0; white-space: normal; word-break: break-word; }
+.classe li.cle::before { content: "🔑 "; font-size: 0.7rem; }
+
+.classe.ajout { border-color: var(--ajout); }
+.classe.ajout .nom { background: var(--ajout); }
+.classe.ajout .nom::after {
+  content: "ajouté";
+  display: inline-block;
+  margin-left: 8px;
+  padding: 0 6px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 8px;
+  vertical-align: middle;
+}
+
+.classe.service { border-style: dashed; }
+.classe.service .nom { background: #5a6bb0; }
+.classe.service { border-color: #5a6bb0; }
+.classe.service ul + ul { border-top-color: #5a6bb0; }
+
+/* Classe de référence (déjà décrite ailleurs) */
+.classe.ref {
+  width: 190px;
+  border-color: var(--entete-ref);
+  opacity: 0.9;
+}
+.classe.ref .nom { background: var(--entete-ref); }
+.classe.ref ul { color: var(--discret); font-style: italic; }
+
+/* Liens entre classes */
+.lien {
+  position: relative;
+  width: 120px;
+  min-width: 90px;
+  height: 56px;
+  flex: 0 0 auto;
+  align-self: flex-start;
+  margin-top: 38px;
+}
+.lien .trait {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 28px;
+  height: 2px;
+  background: var(--lien);
+}
+.lien .card {
+  position: absolute;
+  top: 8px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--primaire-fonce);
+  background: var(--carte);
+  padding: 0 3px;
+}
+.lien .card.g { left: 4px; }
+.lien .card.d { right: 4px; }
+.lien em {
+  position: absolute;
+  top: 34px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 0.7rem;
+  color: var(--discret);
+}
+
+/* Composition : losange plein côté gauche */
+.lien.composition .trait::before {
+  content: "";
+  position: absolute;
+  left: -2px;
+  top: -6px;
+  width: 12px;
+  height: 12px;
+  background: var(--lien);
+  transform: rotate(45deg);
+}
+/* Agrégation : losange vide */
+.lien.agregation .trait::before {
+  content: "";
+  position: absolute;
+  left: -2px;
+  top: -6px;
+  width: 12px;
+  height: 12px;
+  background: var(--carte);
+  border: 2px solid var(--lien);
+  transform: rotate(45deg);
+}
+/* Héritage : triangle vide côté gauche */
+.lien.heritage .trait::before {
+  content: "";
+  position: absolute;
+  left: -2px;
+  top: -7px;
+  border-top: 8px solid transparent;
+  border-bottom: 8px solid transparent;
+  border-right: 12px solid var(--lien);
+}
+/* Dépendance : pointillés + flèche */
+.lien.dependance .trait {
+  background: repeating-linear-gradient(90deg, var(--lien) 0 6px, transparent 6px 10px);
+}
+.lien.dependance .trait::after {
+  content: "";
+  position: absolute;
+  right: -2px;
+  top: -5px;
+  border-top: 6px solid transparent;
+  border-bottom: 6px solid transparent;
+  border-left: 10px solid var(--lien);
+}
+/* Association dirigée : flèche à droite */
+.lien.dirige .trait::after {
+  content: "";
+  position: absolute;
+  right: -2px;
+  top: -5px;
+  border-top: 6px solid transparent;
+  border-bottom: 6px solid transparent;
+  border-left: 10px solid var(--lien);
+}
+
+/* Tableaux de relations et notes */
+table.relations {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+table.relations th, table.relations td {
+  border: 1px solid var(--bord);
+  padding: 6px 10px;
+  text-align: left;
+}
+table.relations th { background: var(--bg); color: var(--discret); }
+table.relations code { font-size: 0.8rem; }
+
+.note {
+  border-left: 4px solid var(--primaire);
+  background: var(--bg);
+  padding: 10px 14px;
+  border-radius: 0 8px 8px 0;
+  font-size: 0.88rem;
+  margin-top: 14px;
+}
+.note ul { margin: 6px 0 0; padding-left: 20px; }
+
+/* Légende */
+.legende {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px 24px;
+  font-size: 0.85rem;
+}
+.legende .item { display: flex; align-items: center; gap: 10px; }
+.legende .lien { margin-top: 0; width: 80px; height: 24px; }
+.legende .lien .trait { top: 12px; }
+.legende .pastille {
+  display: inline-block;
+  width: 26px;
+  height: 16px;
+  border-radius: 3px;
+  flex: 0 0 auto;
+}
+.pastille.normal { background: var(--entete); }
+.pastille.ajout { background: var(--ajout); }
+.pastille.service { background: #5a6bb0; }
+.pastille.ref { background: var(--entete-ref); }
+
+footer {
+  text-align: center;
+  color: var(--discret);
+  font-size: 0.8rem;
+  padding: 20px;
+}
+
+@media (max-width: 720px) {
+  .rangee { flex-direction: column; align-items: stretch; }
+  .classe, .classe.ref { width: 100%; align-self: stretch; }
+  .lien {
+    width: 100%;
+    height: 40px;
+    margin-top: 0;
+    align-self: stretch;
+  }
+  .lien .trait { left: 50%; right: auto; top: 0; bottom: 0; width: 2px; height: auto; }
+  .lien .card.g { left: calc(50% + 8px); top: 2px; }
+  .lien .card.d { right: auto; left: calc(50% + 8px); top: auto; bottom: 2px; }
+  .lien em { top: 12px; left: calc(50% + 40px); right: auto; text-align: left; }
+  .lien.composition .trait::before,
+  .lien.agregation .trait::before,
+  .lien.heritage .trait::before { display: none; }
+  .lien.dependance .trait::after,
+  .lien.dirige .trait::after { display: none; }
+}
+
+@media print {
+  nav.sommaire { display: none; }
+  section.diagramme { break-inside: avoid; box-shadow: none; }
+}
+
+</style>
+</head>
+<body>
+
+<header class="page">
+  <h1>PharmaGest — Diagrammes de classes</h1>
+  <p>Application web de gestion de pharmacie · Python / Django (architecture MVT)</p>
+</header>
+
+<nav class="sommaire">
+  <a href="#legende">Légende</a>
+  <a href="#utilisateurs">1. Utilisateurs &amp; audit</a>
+  <a href="#catalogue">2. Catalogue &amp; stock</a>
+  <a href="#achats">3. Fournisseurs &amp; achats</a>
+  <a href="#ventes">4. Clients, ventes &amp; retours</a>
+  <a href="#services">5. Services &amp; rapports PDF</a>
+  <a href="#ajouts">Éléments ajoutés</a>
+</nav>
+
+<main>
+
+<!-- ============ LÉGENDE ============ -->
+<section class="diagramme" id="legende">
+  <h2>Légende</h2>
+  <p class="intro">Les types suivent les champs Django (<code>CharField</code>, <code>DecimalField</code>, <code>ForeignKey</code>…). Visibilité : <code>+</code> public, <code>-</code> privé.</p>
+  <div class="legende">
+    <div class="item"><span class="pastille normal"></span> Classe issue du cahier des charges</div>
+    <div class="item"><span class="pastille ajout"></span> Classe ajoutée pour compléter la conception</div>
+    <div class="item"><span class="pastille service"></span> Classe de service (logique métier)</div>
+    <div class="item"><span class="pastille ref"></span> Classe de référence (décrite ailleurs)</div>
+    <div class="item"><div class="lien"><span class="trait"></span></div> Association</div>
+    <div class="item"><div class="lien composition"><span class="trait"></span></div> Composition</div>
+    <div class="item"><div class="lien agregation"><span class="trait"></span></div> Agrégation</div>
+    <div class="item"><div class="lien dependance"><span class="trait"></span></div> Dépendance (utilise)</div>
+  </div>
+</section>
+
+<!-- ============ 1. UTILISATEURS ============ -->
+<section class="diagramme" id="utilisateurs">
+  <h2>1. Utilisateurs, rôles et journal d'audit</h2>
+  <p class="intro">Module A : authentification Django, rôles (Administrateur, Pharmacien, Gestionnaire de stock, Caissier, Responsable de gestion), traçabilité des opérations (RG09, RG11).</p>
+
+  <div class="rangee">
+    <div class="classe">
+      <div class="nom">Role</div>
+      <ul>
+        <li class="cle">+ id : int</li>
+        <li>+ nom : CharField (unique)</li>
+        <li>+ description : TextField</li>
+        <li>+ permissions : ManyToMany(Permission)</li>
+      </ul>
+      <ul>
+        <li>+ a_permission(code) : bool</li>
+      </ul>
+    </div>
+
+    <div class="lien"><span class="card g">1</span><span class="trait"></span><span class="card d">0..*</span><em>possède</em></div>
+
+    <div class="classe">
+      <div class="nom">Utilisateur<small>étend AbstractUser</small></div>
+      <ul>
+        <li class="cle">+ id : int</li>
+        <li>+ username : CharField (unique)</li>
+        <li>- password : CharField (haché)</li>
+        <li>+ first_name, last_name : CharField</li>
+        <li>+ email : EmailField</li>
+        <li>+ telephone : CharField</li>
+        <li>+ role : ForeignKey(Role)</li>
+        <li>+ is_active : bool</li>
+        <li>+ date_creation : DateTime</li>
+        <li>+ derniere_connexion : DateTime</li>
+      </ul>
+      <ul>
+        <li>+ activer() : void</li>
+        <li>+ desactiver() : void</li>
+        <li>+ changer_mot_de_passe(ancien, nouveau)</li>
+        <li>+ peut(action) : bool</li>
+      </ul>
+    </div>
+
+    <div class="lien"><span class="card g">1</span><span class="trait"></span><span class="card d">0..*</span><em>produit</em></div>
+
+    <div class="classe">
+      <div class="nom">JournalAudit</div>
+      <ul>
+        <li class="cle">+ id : int</li>
+        <li>+ utilisateur : ForeignKey(Utilisateur)</li>
+        <li>+ action : CharField (CREATION, MODIFICATION, VALIDATION, ANNULATION, CONNEXION…)</li>
+        <li>+ modele_cible : CharField</li>
+        <li>+ objet_id : int</li>
+        <li>+ details : JSONField</li>
+        <li>+ adresse_ip : GenericIPAddress</li>
+        <li>+ date_action : DateTime (auto)</li>
+      </ul>
+      <ul>
+        <li>+ enregistrer(user, action, objet) : static</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="note">
+    <strong>Règles :</strong>
+    <ul>
+      <li>Le mot de passe est géré par Django (hachage PBKDF2), jamais en clair.</li>
+      <li>Le journal d'audit est en <em>ajout seulement</em> : pas de modification ni de suppression.</li>
+      <li>Un utilisateur peut cumuler plusieurs rôles uniquement si l'administrateur étend ses permissions (voir <code>Permission</code> Django).</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============ 2. CATALOGUE & STOCK ============ -->
+<section class="diagramme" id="catalogue">
+  <h2>2. Catalogue des médicaments et gestion du stock</h2>
+  <p class="intro">Modules B, C et G : médicaments, catégories, lots avec péremption (FEFO), mouvements de stock traçables et inventaire physique.</p>
+
+  <div class="rangee">
+    <div class="classe">
+      <div class="nom">Categorie</div>
+      <ul>
+        <li class="cle">+ id : int</li>
+        <li>+ nom : CharField (unique)</li>
+        <li>+ description : TextField</li>
+      </ul>
+      <ul>
+        <li>+ est_utilisee() : bool</li>
+        <li>+ supprimer() : void <small>(refusé si utilisée)</small></li>
+      </ul>
+    </div>
+
+    <div class="lien"><span class="card g">1</span><span class="trait"></span><span class="card d">0..*</span><em>classe</em></div>
+
+    <div class="classe">
+      <div class="nom">Medicament</div>
+      <ul>
+        <li class="cle">+ id : int</li>
+        <li>+ nom_commercial : CharField</li>
+        <li>+ denomination_generique : CharField</li>
+        <li>+ categorie : ForeignKey(Categorie, PROTECT)</li>
+        <li>+ forme : CharField (comprimé, sirop, gélule…)</li>
+        <li>+ dosage : CharField</li>
+        <li>+ laboratoire : CharField</li>
+        <li>+ code_barres : CharField (unique, null)</li>
+        <li>+ photo : ImageField</li>
+        <li>+ prix_achat : Decimal (&gt; 0)</li>
+        <li>+ prix_vente : Decimal (&gt; 0)</li>
+        <li>+ seuil_alerte : int</li>
+        <li>+ statut : ACTIF | ARCHIVE</li>
+        <li>+ date_creation : DateTime</li>
+      </ul>
+      <ul>
+        <li>+ stock_total() : int</li>
+        <li>+ est_en_alerte() : bool</li>
+        <li>+ est_en_rupture() : bool</li>
+        <li>+ archiver() : void</li>
+        <li>+ peut_etre_supprime() : bool</li>
+      </ul>
+    </div>
+
+    <div class="lien composition"><span class="card g">1</span><span class="trait"></span><span class="card d">0..*</span><em>a des lots</em></div>
+
+    <div class="classe">
+      <div class="nom">LotStock</div>
+      <ul>
+        <li class="cle">+ id : int</li>
+        <li>+ medicament : ForeignKey(Medicament)</li>
+        <li>+ numero_lot : CharField</li>
+        <li>+ date_peremption : Date</li>
+        <li>+ quantite_recue : int</li>
+        <li>+ quantite_disponible : int (&ge; 0)</li>
+        <li>+ est_bloque : bool</li>
+        <li>+ date_reception : Date</li>
+      </ul>
+      <ul>
+        <li>+ est_perime() : bool</li>
+        <li>+ est_delivrable() : bool</li>
+        <li>+ jours_avant_peremption() : int</li>
+        <li>+ bloquer(motif) : void</li>
+        <li>+ lots_fefo(medicament) : static</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="rangee">
+    <div class="classe">
+      <div class="nom">LotStock</div>
+      <ul><li>(voir ci-dessus)</li></ul>
+    </div>
+    <div class="lien"><span class="card g">1</span><span class="trait"></span><span class="card d">0..*</span><em>historise</em></div>
+    <div class="classe">
+      <div class="nom">MouvementStock</div>
+      <ul>
+        <li class="cle">+ id : int</li>
+        <li>+ lot : ForeignKey(LotStock)</li>
+        <li>+ type : ENTREE_ACHAT | SORTIE_VENTE | RETOUR | CORRECTION | INVENTAIRE | PEREMPTION</li>
+        <li>+ quantite : int (signée)</li>
+        <li>+ stock_apres : int</li>
+        <li>+ reference_type : CharField</li>
+        <li>+ reference_id : int</li>
+        <li>+ motif : TextField</li>
+        <li>+ utilisateur : ForeignKey(Utilisateur)</li>
+        <li>+ date_mouvement : DateTime (auto)</li>
+      </ul>
+      <ul>
+        <li>+ enregistrer(lot, type, qte, ...) : static</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3 class="sous-titre">Inventaire physique</h3>
+  <div class="rangee">
+    <div class="classe ajout">
+      <div class="nom">Inventaire</div>
+      <ul>
+        <li class="cle">+ id : int</li>
+        <li>+ date_inventaire : Date</li>
+        <li>+ statut : EN_COURS | VALIDE | ANNULE</li>
+        <li>+ realise_par : ForeignKey(Utilisateur)</li>
+        <li>+ commentaire : TextField</li>
+      </ul>
+      <ul>
+        <li>+ valider() : void <small>(crée les corrections)</small></li>
+        <li>+ total_ecarts() : int</li>
+      </ul>
+    </div>
+    <div class="lien composition"><span class="card g">1</span><span class="trait"></span><span class="card d">1..*</span><em>contient</em></div>
+    <div class="classe ajout">
+      <div class="nom">LigneInventaire</div>
+      <ul>
+        <li class="cle">+ id : int</li>
+        <li>+ inventaire : ForeignKey(Inventaire)</li>
+        <li>+ lot : ForeignKey(LotStock)</li>
+        <li>+ quantite_theorique : int</li>
+        <li>+ quantite_comptee : int</li>
+      </ul>
+      <ul>
+        <li>+ ecart() : int</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3 class="sous-titre">Relations</h3>
+  <table class="relations">
+    <tr><th>Source</th><th>Cible</th><th>Cardinalité</th><th>Règle associée</th></tr>
+    <tr><td>Categorie</td><td>Medicament</td><td>1 — 0..*</td><td>Suppression interdite si utilisée (<code>on_delete=PROTECT</code>)</td></tr>
+    <tr><td>Medicament</td><td>LotStock</td><td>1 — 0..*</td><td>Stock total = somme des lots délivrables</td></tr>
+    <tr><td>LotStock</td><td>MouvementStock</td><td>1 — 0..*</td><td>RG09 : toute variation de stock est tracée</td></tr>
+    <tr><td>Inventaire</td><td>LigneInventaire</td><td>1 — 1..*</td><td>L'écart génère un mouvement de type INVENTAIRE</td></tr>
+  </table>
+
+  <div class="note">
+    <strong>Règles :</strong>
+    <ul>
+      <li>RG02 : <code>code_barres</code> unique lorsqu'il est renseigné. RG07 : <code>quantite_disponible</code> ne peut jamais être négative (<code>CheckConstraint</code>).</li>
+      <li>RG08 / FEFO : les lots périmés ou bloqués sont exclus de la vente ; les lots à péremption la plus proche sortent en premier.</li>
+      <li>Un médicament lié à des opérations est archivé (statut), jamais supprimé.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============ 3. ACHATS ============ -->
+<section class="diagramme" id="achats">
+  <h2>3. Fournisseurs, commandes d'achat et réceptions</h2>
+  <p class="intro">Modules D et F : une commande ne modifie pas le stock (RG04) ; seule la réception validée l'augmente, une seule fois (RG05).</p>
+
+  <div class="rangee">
+    <div class="classe">
+      <div class="nom">Fournisseur</div>
+      <ul>
+        <li class="cle">+ id : int</li>
+        <li>+ nom : CharField</li>
+        <li>+ adresse : TextField</li>
+        <li>+ telephone : CharField</li>
+        <li>+ email : EmailField</li>
+        <li>+ numero_fiscal : CharField</li>
+        <li>+ contact_principal : CharField</li>
+        <li>+ est_actif : bool</li>
+      </ul>
+      <ul>
+        <li>+ historique_achats() : QuerySet</li>
+        <li>+ montant_total_commande() : Decimal</li>
+        <li>+ desactiver() : void</li>
+      </ul>
+    </div>
+
+    <div class="lien"><span class="card g">1</span><span class="trait"></span><span class="card d">0..*</span><em>reçoit</em></div>
+
+    <div class="classe">
+      <div class="nom">CommandeAchat</div>
+      <ul>
+        <li class="cle">+ id : int</li>
+        <li>+ numero : CharField (unique)</li>
+        <li>+ fournisseur : ForeignKey(Fournisseur)</li>
+        <li>+ statut : BROUILLON | COMMANDEE | PARTIELLE | COMPLETE | ANNULEE</li>
+        <li>+ date_creation : DateTime</li>
+        <li>+ date_commande : DateTime</li>
+        <li>+ montant_total : Decimal</li>
+        <li>+ cree_par : ForeignKey(Utilisateur)</li>
+      </ul>
+      <ul>
+        <li>+ calculer_total() : Decimal</li>
+        <li>+ valider() : void</li>
+        <li>+ annuler() : void</li>
+        <li>+ mettre_a_jour_statut() : void</li>
+      </ul>
+    </div>
+
+    <div class="lien composition"><span class="card g">1</span><span class="trait"></span><span class="card d">1..*</span><em>contient</em></div>
+
+    <div class="classe">
+      <div class="nom">LigneAchat</div>
+      <ul>
+        <li class="cle">+ id : int</li>
+        <li>+ commande : ForeignKey(CommandeAchat)</li>
+        <li>+ medicament : ForeignKey(Medicament)</li>
+        <li>+ quantite_commandee : int (&gt; 0)</li>
+        <li>+ quantite_recue : int</li>
+        <li>+ prix_achat_unitaire : Decimal</li>
+      </ul>
+      <ul>
+        <li>+ sous_total() : Decimal</li>
+        <li>+ reste_a_recevoir() : int</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="rangee">
+    <div class="classe">
+      <div class="nom">CommandeAchat</div>
+      <ul><li>(voir ci-dessus)</li></ul>
+    </div>
+    <div class="lien"><span class="card g">1</span><span class="trait"></span><span class="card d">0..*</span><em>est livrée par</em></div>
+    <div class="classe">
+      <div class="nom">ReceptionAchat</div>
+      <ul>
+        <li class="cle">+ id : int</li>
+        <li>+ numero_bon : CharField (unique)</li>
+        <li>+ commande : ForeignKey(CommandeAchat)</li>
+        <li>+ date_reception : DateTime</li>
+        <li>+ recu_par : ForeignKey(Utilisateur)</li>
+        <li>+ est_validee : bool</li>
+      </ul>
+      <ul>
+        <li>+ valider() : void <small>(transaction atomique)</small></li>
+      </ul>
+    </div>
+    <div class="lien composition"><span class="card g">1</span><span class="trait"></span><span class="card d">1..*</span><em>détaille</em></div>
+    <div class="classe ajout">
+      <div class="nom">LigneReception</div>
+      <ul>
+        <li class="cle">+ id : int</li>
+        <li>+ reception : ForeignKey(ReceptionAchat)</li>
+        <li>+ ligne_achat : ForeignKey(LigneAchat)</li>
+        <li>+ numero_lot : CharField</li>
+        <li>+ date_peremption : Date</li>
+        <li>+ quantite_recue : int (&gt; 0)</li>
+        <li>+ lot : ForeignKey(LotStock, null)</li>
+      </ul>
+      <ul>
+        <li>+ creer_lot() : LotStock</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3 class="sous-titre">Relations</h3>
+  <table class="relations">
+    <tr><th>Source</th><th>Cible</th><th>Cardinalité</th><th>Règle associée</th></tr>
+    <tr><td>Fournisseur</td><td>CommandeAchat</td><td>1 — 0..*</td><td>Un fournisseur désactivé conserve son historique</td></tr>
+    <tr><td>CommandeAchat</td><td>LigneAchat</td><td>1 — 1..*</td><td>Total = somme des sous-totaux</td></tr>
+    <tr><td>CommandeAchat</td><td>ReceptionAchat</td><td>1 — 0..*</td><td>Réception partielle possible (statut PARTIELLE)</td></tr>
+    <tr><td>ReceptionAchat</td><td>LigneReception</td><td>1 — 1..*</td><td>Chaque ligne crée un <code>LotStock</code> et un <code>MouvementStock</code> ENTREE_ACHAT</td></tr>
+    <tr><td>LigneAchat</td><td>Medicament</td><td>*— 1</td><td>Le prix d'achat est figé sur la ligne (RG12)</td></tr>
+  </table>
+</section>
+
+<!-- ============ 4. VENTES ============ -->
+<section class="diagramme" id="ventes">
+  <h2>4. Clients, ventes, paiements et retours</h2>
+  <p class="intro">Modules E, H et I : vente atomique (validation + sortie de stock), prix figés sur les lignes (RG12), retours traités par opération compensatoire.</p>
+
+  <div class="rangee">
+    <div class="classe">
+      <div class="nom">Client</div>
+      <ul>
+        <li class="cle">+ id : int</li>
+        <li>+ nom : CharField (facultatif)</li>
+        <li>+ telephone : CharField (facultatif)</li>
+        <li>+ adresse : CharField (facultatif)</li>
+        <li>+ est_actif : bool</li>
+        <li>+ date_creation : DateTime</li>
+      </ul>
+      <ul>
+        <li>+ historique_ventes() : QuerySet</li>
+      </ul>
+    </div>
+
+    <div class="lien"><span class="card g">0..1</span><span class="trait"></span><span class="card d">0..*</span><em>achète</em></div>
+
+    <div class="classe">
+      <div class="nom">Vente</div>
+      <ul>
+        <li class="cle">+ id : int</li>
+        <li>+ numero : CharField (unique)</li>
+        <li>+ client : ForeignKey(Client, null)</li>
+        <li>+ caissier : ForeignKey(Utilisateur)</li>
+        <li>+ date_vente : DateTime</li>
+        <li>+ statut : EN_COURS | VALIDEE | ANNULEE</li>
+        <li>+ total : Decimal</li>
+        <li>+ cle_idempotence : UUID (unique)</li>
+      </ul>
+      <ul>
+        <li>+ ajouter_ligne(lot, qte) : void</li>
+        <li>+ calculer_total() : Decimal</li>
+        <li>+ valider() : void <small>(@transaction.atomic)</small></li>
+        <li>+ annuler(motif) : void</li>
+      </ul>
+    </div>
+
+    <div class="lien composition"><span class="card g">1</span><span class="trait"></span><span class="card d">1..*</span><em>contient</em></div>
+
+    <div class="classe">
+      <div class="nom">LigneVente</div>
+      <ul>
+        <li class="cle">+ id : int</li>
+        <li>+ vente : ForeignKey(Vente)</li>
+        <li>+ medicament : ForeignKey(Medicament)</li>
+        <li>+ lot : ForeignKey(LotStock)</li>
+        <li>+ quantite : int (&gt; 0)</li>
+        <li>+ prix_unitaire_applique : Decimal</li>
+      </ul>
+      <ul>
+        <li>+ sous_total() : Decimal</li>
+        <li>+ verifier_disponibilite() : bool</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="rangee">
+    <div class="classe">
+      <div class="nom">Vente</div>
+      <ul><li>(voir ci-dessus)</li></ul>
+    </div>
+    <div class="lien composition"><span class="card g">1</span><span class="trait"></span><span class="card d">1..*</span><em>réglée par</em></div>
+    <div class="classe">
+      <div class="nom">Paiement</div>
+      <ul>
+        <li class="cle">+ id : int</li>
+        <li>+ vente : ForeignKey(Vente)</li>
+        <li>+ mode : ESPECES | MOBILE_MONEY | AUTRE</li>
+        <li>+ montant : Decimal</li>
+        <li>+ statut : EN_ATTENTE | CONFIRME | ECHOUE | REMBOURSE</li>
+        <li>+ reference_transaction : CharField</li>
+        <li>+ date_paiement : DateTime</li>
+      </ul>
+      <ul>
+        <li>+ confirmer() : void</li>
+        <li>+ rembourser(montant) : void</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="rangee">
+    <div class="classe">
+      <div class="nom">LigneVente</div>
+      <ul><li>(voir ci-dessus)</li></ul>
+    </div>
+    <div class="lien"><span class="card g">1</span><span class="trait"></span><span class="card d">0..*</span><em>peut être retournée</em></div>
+    <div class="classe">
+      <div class="nom">RetourVente</div>
+      <ul>
+        <li class="cle">+ id : int</li>
+        <li>+ vente : ForeignKey(Vente)</li>
+        <li>+ ligne_vente : ForeignKey(LigneVente)</li>
+        <li>+ quantite_retournee : int (&gt; 0)</li>
+        <li>+ motif : TextField</li>
+        <li>+ remis_en_stock : bool</li>
+        <li>+ montant_rembourse : Decimal</li>
+        <li>+ utilisateur : ForeignKey(Utilisateur)</li>
+        <li>+ date_retour : DateTime</li>
+      </ul>
+      <ul>
+        <li>+ valider() : void</li>
+        <li>+ est_eligible_remise_en_stock() : bool</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3 class="sous-titre">Relations</h3>
+  <table class="relations">
+    <tr><th>Source</th><th>Cible</th><th>Cardinalité</th><th>Règle associée</th></tr>
+    <tr><td>Client</td><td>Vente</td><td>0..1 — 0..*</td><td>Vente comptoir possible sans client identifié</td></tr>
+    <tr><td>Vente</td><td>LigneVente</td><td>1 — 1..*</td><td>RG12 : prix appliqué conservé sur la ligne</td></tr>
+    <tr><td>LigneVente</td><td>LotStock</td><td>* — 1</td><td>RG08 : lot ni périmé ni bloqué ; RG07 : quantité &le; stock du lot</td></tr>
+    <tr><td>Vente</td><td>Paiement</td><td>1 — 1..*</td><td>Paiement électronique confirmé seulement après vérification du statut</td></tr>
+    <tr><td>LigneVente</td><td>RetourVente</td><td>1 — 0..*</td><td>Pas de suppression : opération compensatoire + mouvement RETOUR</td></tr>
+  </table>
+
+  <div class="note">
+    <strong>Règles de vente :</strong>
+    <ul>
+      <li>Quantité nulle ou négative refusée ; quantité supérieure au stock refusée.</li>
+      <li><code>cle_idempotence</code> empêche la validation en double d'une même vente (RG06).</li>
+      <li>La validation de la vente et la sortie de stock s'exécutent dans une même transaction atomique.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============ 5. SERVICES ============ -->
+<section class="diagramme" id="services">
+  <h2>5. Services métier, tableau de bord et rapports PDF</h2>
+  <p class="intro">Modules J et K : la logique critique est isolée dans des services, ce qui garde les vues légères et facilite les tests Django.</p>
+
+  <div class="rangee">
+    <div class="classe service">
+      <div class="nom">ServiceStock<small>«service»</small></div>
+      <ul>
+        <li>(aucun attribut persistant)</li>
+      </ul>
+      <ul>
+        <li>+ entrer_stock(reception) : void</li>
+        <li>+ sortir_stock_fefo(medicament, qte) : list[LotStock]</li>
+        <li>+ corriger(lot, qte, motif) : void</li>
+        <li>+ alertes_stock_faible() : QuerySet</li>
+        <li>+ lots_proches_peremption(jours) : QuerySet</li>
+        <li>+ lots_perimes() : QuerySet</li>
+      </ul>
+    </div>
+
+    <div class="lien dependance"><span class="trait"></span><em>utilise</em></div>
+
+    <div class="classe ref">
+      <div class="nom">LotStock</div>
+      <ul><li>MouvementStock</li></ul>
+    </div>
+
+    <div class="lien dependance" style="transform: scaleX(-1);"><span class="trait"></span></div>
+
+    <div class="classe service">
+      <div class="nom">ServiceVente<small>«service»</small></div>
+      <ul><li>(aucun attribut persistant)</li></ul>
+      <ul>
+        <li>+ valider_vente(vente) : void <small>(atomique)</small></li>
+        <li>+ traiter_retour(retour) : void</li>
+        <li>+ annuler_vente(vente, motif) : void</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="rangee">
+    <div class="classe service">
+      <div class="nom">ServiceStatistiques<small>«service»</small></div>
+      <ul><li>(aucun attribut persistant)</li></ul>
+      <ul>
+        <li>+ medicaments_actifs() : int</li>
+        <li>+ ventes_du_jour() : Decimal</li>
+        <li>+ ventes_periode(debut, fin) : Decimal</li>
+        <li>+ achats_periode(debut, fin) : Decimal</li>
+        <li>+ produits_plus_vendus(n) : list</li>
+        <li>+ chiffre_affaires() : Decimal</li>
+        <li>+ encaissements() : Decimal</li>
+        <li>+ marge_commerciale() : Decimal</li>
+      </ul>
+    </div>
+
+    <div class="lien dependance"><span class="trait"></span><em>lit</em></div>
+
+    <div class="classe ref">
+      <div class="nom">Vente</div>
+      <ul><li>CommandeAchat · Medicament</li></ul>
+    </div>
+
+    <div class="lien dependance" style="transform: scaleX(-1);"><span class="trait"></span></div>
+
+    <div class="classe service">
+      <div class="nom">GenerateurPDF<small>«service» · ReportLab</small></div>
+      <ul><li>+ infos_pharmacie : dict</li></ul>
+      <ul>
+        <li>+ recu_vente(vente) : bytes</li>
+        <li>+ facture(vente) : bytes</li>
+        <li>+ bon_commande(commande) : bytes</li>
+        <li>+ bon_reception(reception) : bytes</li>
+        <li>+ rapport_stock() : bytes</li>
+        <li>+ rapport_ventes(debut, fin) : bytes</li>
+        <li>+ rapport_achats(debut, fin) : bytes</li>
+        <li>+ liste_peremptions(jours) : bytes</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="note">
+    <strong>À noter :</strong>
+    <ul>
+      <li>Le chiffre d'affaires, les encaissements et la marge commerciale sont trois indicateurs distincts ; la marge n'est pas présentée comme un bénéfice net.</li>
+      <li>Les valeurs du tableau de bord sont calculées depuis la base, jamais saisies.</li>
+      <li>Chaque document PDF porte un numéro, une date, les lignes, les prix appliqués, le total et les informations de la pharmacie.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============ ÉLÉMENTS AJOUTÉS ============ -->
+<section class="diagramme" id="ajouts">
+  <h2>Éléments ajoutés pour compléter le cahier des charges</h2>
+  <p class="intro">Le cahier des charges laissait ces points ouverts ("pourront être complétés"). Voici ce qui a été ajouté et pourquoi.</p>
+  <table class="relations">
+    <tr><th>Ajout</th><th>Raison</th></tr>
+    <tr><td><code>Role</code></td><td>Les rôles et permissions sont exigés (module A, RG11) mais aucune table n'était prévue pour les rôles.</td></tr>
+    <tr><td><code>LigneReception</code></td><td>Le cahier mentionne une table de lignes de réception ; nécessaire pour les réceptions partielles et la création des lots (numéro, péremption).</td></tr>
+    <tr><td><code>Inventaire</code> / <code>LigneInventaire</code></td><td>L'inventaire physique est demandé (module G) sans entité associée.</td></tr>
+    <tr><td><code>Vente.cle_idempotence</code></td><td>Évite la validation en double (RG06, test de deux validations simultanées).</td></tr>
+    <tr><td><code>MouvementStock.stock_apres</code> et type <code>PEREMPTION</code></td><td>Contrôle de cohérence du stock et sortie traçable des lots périmés.</td></tr>
+    <tr><td><code>Paiement.REMBOURSE</code></td><td>Suit les remboursements liés aux retours.</td></tr>
+    <tr><td>Classes de service</td><td>Isolent la logique atomique (ventes, réceptions), les statistiques et la génération PDF.</td></tr>
+  </table>
+  <div class="note">
+    <strong>Pour Django :</strong> les modèles listés correspondent aux applications prévues (<code>utilisateurs</code>, <code>medicaments</code>, <code>fournisseurs</code>, <code>clients</code>, <code>achats</code>, <code>stock</code>, <code>ventes</code>, <code>rapports</code>). Les services peuvent vivre dans un fichier <code>services.py</code> par application.
+  </div>
+</section>
+
+</main>
+
+<footer>PharmaGest · Diagrammes de classes · Python / Django</footer>
+
+</body>
+</html>

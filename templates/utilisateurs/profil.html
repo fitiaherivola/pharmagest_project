@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block titre %}Mon profil{% endblock %}
+{% block entete %}Mon profil{% endblock %}
+{% block sous_entete %}Informations personnelles et securite{% endblock %}
+{% block contenu %}
+<div class="row g-3">
+    <div class="col-lg-7">
+        <div class="carte">
+            <div class="card-header py-3">Informations personnelles</div>
+            <div class="card-body">
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    {% include "includes/champs_formulaire.html" %}
+                    <button class="btn btn-principal" type="submit"><i class="bi bi-check-lg"></i> Enregistrer</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-5">
+        <div class="carte">
+            <div class="card-header py-3">Compte</div>
+            <div class="card-body">
+                <p class="mb-1"><span class="text-muted">Identifiant :</span> <strong>{{ user.username }}</strong></p>
+                <p class="mb-1"><span class="text-muted">Role :</span> <strong>{{ user.role.nom|default:"Super administrateur" }}</strong></p>
+                <p class="mb-3"><span class="text-muted">Derniere connexion :</span> {{ user.last_login|date:"d/m/Y H:i"|default:"-" }}</p>
+                <a class="btn btn-outline-secondary" href="{% url 'utilisateurs:mot_de_passe' %}">
+                    <i class="bi bi-key"></i> Changer le mot de passe
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

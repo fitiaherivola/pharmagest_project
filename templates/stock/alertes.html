@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% load permissions_extras %}
+{% block titre %}Alertes de stock{% endblock %}
+{% block entete %}Alertes de stock{% endblock %}
+{% block sous_entete %}Stocks faibles, peremptions proches et lots perimes{% endblock %}
+{% block contenu %}
+<div class="row g-3">
+    <div class="col-xl-6">
+        <div class="carte h-100">
+            <div class="card-header py-3 d-flex justify-content-between">
+                <span><i class="bi bi-exclamation-triangle text-warning"></i> Stocks faibles</span>
+                <span class="badge badge-doux">{{ stocks_faibles|length }}</span>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-sm align-middle mb-0">
+                    <thead><tr><th>Medicament</th><th class="text-end">Stock</th><th class="text-end">Seuil</th><th></th></tr></thead>
+                    <tbody>
+                    {% for m in stocks_faibles %}
+                        <tr>
+                            <td>{{ m.nom_commercial }} <span class="text-muted small">{{ m.dosage }}</span></td>
+                            <td class="text-end fw-semibold">{{ m.stock_disponible }}</td>
+                            <td class="text-end text-muted">{{ m.seuil_alerte }}</td>
+                            <td class="text-end"><a class="btn btn-sm btn-outline-secondary" href="{% url 'medicaments:detail' m.pk %}"><i class="bi bi-eye"></i></a></td>
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="4" class="text-center text-muted py-4">Aucun stock faible.</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-6">
+        <div class="carte h-100">
+            <div class="card-header py-3 d-flex justify-content-between">
+                <span><i class="bi bi-calendar-x text-warning"></i> Peremptions proches (30 jours)</span>
+                <span class="badge badge-doux">{{ proches_peremption|length }}</span>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-sm align-middle mb-0">
+                    <thead><tr><th>Medicament</th><th>Lot</th><th>Peremption</th><th class="text-end">Qte</th></tr></thead>
+                    <tbody>
+                    {% for lot in proches_peremption %}
+                        <tr>
+                            <td>{{ lot.medicament }}</td>
+                            <td>{{ lot.numero_lot }}</td>
+                            <td>{{ lot.date_peremption|date:"d/m/Y" }} <span class="badge bg-warning text-dark">J-{{ lot.jours_avant_peremption }}</span></td>
+                            <td class="text-end">{{ lot.quantite_disponible }}</td>
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="4" class="text-center text-muted py-4">Aucune peremption proche.</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-12">
+        <div class="carte">
+            <div class="card-header py-3 d-flex justify-content-between">
+                <span><i class="bi bi-x-octagon text-danger"></i> Lots perimes avec stock</span>
+                <span class="badge bg-danger">{{ perimes|length }}</span>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-sm align-middle mb-0">
+                    <thead><tr><th>Medicament</th><th>Lot</th><th>Peremption</th><th class="text-end">Quantite restante</th><th>Action</th></tr></thead>
+                    <tbody>
+                    {% for lot in perimes %}
+                        <tr>
+                            <td>{{ lot.medicament }}</td>
+                            <td>{{ lot.numero_lot }}</td>
+                            <td>{{ lot.date_peremption|date:"d/m/Y" }}</td>
+                            <td class="text-end fw-semibold">{{ lot.quantite_disponible }}</td>
+                            <td>
+                                {% if user|a_permission:"stock.change_lotstock" %}
+                                    <form method="post" action="{% url 'stock:basculer_blocage' lot.pk %}" data-confirm="Bloquer ce lot perime ?">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="motif" value="Lot perime">
+                                        <button class="btn btn-sm btn-outline-danger" type="submit">Bloquer</button>
+                                    </form>
+                                {% else %}-{% endif %}
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="5" class="text-center text-muted py-4">Aucun lot perime.</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

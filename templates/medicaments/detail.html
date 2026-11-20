@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% load permissions_extras %}
+{% block titre %}{{ medicament.nom_commercial }}{% endblock %}
+{% block entete %}{{ medicament.nom_commercial }}{% endblock %}
+{% block sous_entete %}{{ medicament.categorie.nom }} &middot; {{ medicament.get_forme_display }}{% endblock %}
+{% block contenu %}
+<div class="row g-3">
+    <div class="col-lg-4">
+        <div class="carte">
+            <div class="card-body">
+                {% if medicament.photo %}
+                    <img src="{{ medicament.photo.url }}" alt="{{ medicament.nom_commercial }}" class="img-fluid rounded mb-3" style="max-height:230px;object-fit:cover;width:100%">
+                {% else %}
+                    <div class="bg-light rounded d-flex align-items-center justify-content-center mb-3" style="height:170px"><i class="bi bi-capsule text-muted fs-1"></i></div>
+                {% endif %}
+                <h2 class="h5">{{ medicament.nom_commercial }} <span class="text-muted fs-6">{{ medicament.dosage }}</span></h2>
+                <p class="text-muted small mb-3">{{ medicament.denomination_generique|default:"-" }}</p>
+                <dl class="row small mb-0">
+                    <dt class="col-6 text-muted">Code-barres</dt><dd class="col-6">{{ medicament.code_barres|default:"-" }}</dd>
+                    <dt class="col-6 text-muted">Laboratoire</dt><dd class="col-6">{{ medicament.laboratoire|default:"-" }}</dd>
+                    <dt class="col-6 text-muted">Prix achat</dt><dd class="col-6">{{ medicament.prix_achat|floatformat:0 }} FCFA</dd>
+                    <dt class="col-6 text-muted">Prix vente</dt><dd class="col-6 fw-semibold">{{ medicament.prix_vente|floatformat:0 }} FCFA</dd>
+                    <dt class="col-6 text-muted">Seuil alerte</dt><dd class="col-6">{{ medicament.seuil_alerte }}</dd>
+                    <dt class="col-6 text-muted">Stock delivrable</dt><dd class="col-6 fw-semibold">{{ stock }}</dd>
+                    <dt class="col-6 text-muted">Statut</dt><dd class="col-6">{{ medicament.get_statut_display }}</dd>
+                </dl>
+            </div>
+            {% if user|a_permission:"medicaments.change_medicament" %}
+                <div class="card-footer bg-white d-flex gap-2">
+                    <a class="btn btn-sm btn-principal" href="{% url 'medicaments:modifier' medicament.pk %}"><i class="bi bi-pencil"></i> Modifier</a>
+                    <form method="post" action="{% url 'medicaments:basculer' medicament.pk %}" data-confirm="Changer le statut ?">
+                        {% csrf_token %}
+                        <button class="btn btn-sm btn-outline-secondary" type="submit">
+                            {% if medicament.statut == "ACTIF" %}<i class="bi bi-archive"></i> Archiver{% else %}<i class="bi bi-arrow-counterclockwise"></i> Reactiver{% endif %}
+                        </button>
+                    </form>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    <div class="col-lg-8">
+        <div class="carte">
+            <div class="card-header py-3">Lots de stock</div>
+            <div class="table-responsive">
+                <table class="table table-sm align-middle mb-0">
+                    <thead><tr><th>Lot</th><th>Peremption</th><th class="text-end">Recu</th><th class="text-end">Disponible</th><th>Etat</th><th></th></tr></thead>
+                    <tbody>
+                    {% for lot in lots %}
+                        <tr>
+                            <td class="fw-semibold">{{ lot.numero_lot }}</td>
+                            <td>{{ lot.date_peremption|date:"d/m/Y" }}</td>
+                            <td class="text-end">{{ lot.quantite_recue }}</td>
+                            <td class="text-end">{{ lot.quantite_disponible }}</td>
+                            <td>
+                                {% if lot.est_perime %}<span class="badge bg-danger">Perime</span>
+                                {% elif lot.est_bloque %}<span class="badge bg-warning text-dark">Bloque</span>
+                                {% elif lot.quantite_disponible == 0 %}<span class="badge bg-secondary">Epuise</span>
+                                {% else %}<span class="badge bg-success">Delivrable</span>{% endif %}
+                            </td>
+                            <td class="text-end"><a class="btn btn-sm btn-outline-secondary" href="{% url 'stock:lot_detail' lot.pk %}"><i class="bi bi-eye"></i></a></td>
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="6" class="text-center text-muted py-4">Aucun lot enregistre.</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="carte mt-3">
+            <div class="card-header py-3">Informations</div>
+            <div class="card-body small text-muted">
+                Cree le {{ medicament.date_creation|date:"d/m/Y H:i" }}.
+                {% if medicament.est_en_alerte %}<span class="badge bg-warning text-dark ms-2">Stock sous le seuil d'alerte</span>{% endif %}
+                {% if medicament.est_en_rupture %}<span class="badge bg-danger ms-2">Rupture de stock</span>{% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% load permissions_extras %}
+{% block titre %}Commande {{ commande.numero }}{% endblock %}
+{% block entete %}Commande {{ commande.numero }}{% endblock %}
+{% block sous_entete %}{{ commande.fournisseur.nom }} &middot; {{ commande.get_statut_display }}{% endblock %}
+{% block contenu %}
+<div class="d-flex flex-wrap gap-2 mb-3">
+    <a class="btn btn-outline-secondary" href="{% url 'achats:commandes' %}"><i class="bi bi-arrow-left"></i> Commandes</a>
+    <a class="btn btn-outline-secondary" href="{% url 'achats:bon_commande_pdf' commande.pk %}" target="_blank"><i class="bi bi-file-pdf"></i> Bon de commande</a>
+    {% if commande.statut == "BROUILLON" and user|a_permission:"achats.change_commandeachat" %}
+        <a class="btn btn-outline-secondary" href="{% url 'achats:modifier_commande' commande.pk %}"><i class="bi bi-pencil"></i> Modifier</a>
+        {% if commande.lignes.exists %}
+            <form class="d-inline" method="post" action="{% url 'achats:valider_commande' commande.pk %}" data-confirm="Valider cette commande ?">
+                {% csrf_token %}
+                <button class="btn btn-principal" type="submit"><i class="bi bi-check2-circle"></i> Valider la commande</button>
+            </form>
+        {% endif %}
+    {% endif %}
+    {% if commande.est_receptionnable and user|a_permission:"achats.add_receptionachat" %}
+        <a class="btn btn-success" href="{% url 'achats:creer_reception' commande.pk %}"><i class="bi bi-box-arrow-in-down"></i> Receptionner</a>
+    {% endif %}
+    {% if commande.statut != "ANNULEE" and commande.statut != "COMPLETE" and user|a_permission:"achats.change_commandeachat" %}
+        <form class="d-inline" method="post" action="{% url 'achats:annuler_commande' commande.pk %}" data-confirm="Annuler cette commande ?">
+            {% csrf_token %}
+            <button class="btn btn-outline-danger" type="submit"><i class="bi bi-x-lg"></i> Annuler</button>
+        </form>
+    {% endif %}
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-4">
+        <div class="carte">
+            <div class="card-body">
+                <dl class="row small mb-0">
+                    <dt class="col-6 text-muted">Fournisseur</dt><dd class="col-6">{{ commande.fournisseur.nom }}</dd>
+                    <dt class="col-6 text-muted">Statut</dt><dd class="col-6">{{ commande.get_statut_display }}</dd>
+                    <dt class="col-6 text-muted">Creation</dt><dd class="col-6">{{ commande.date_creation|date:"d/m/Y H:i" }}</dd>
+                    <dt class="col-6 text-muted">Commande</dt><dd class="col-6">{{ commande.date_commande|date:"d/m/Y H:i"|default:"-" }}</dd>
+                    <dt class="col-6 text-muted">Cree par</dt><dd class="col-6">{{ commande.cree_par.username|default:"-" }}</dd>
+                    <dt class="col-6 text-muted">Montant</dt><dd class="col-6 fw-semibold">{{ commande.montant_total|floatformat:0 }} FCFA</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-8">
+        <div class="carte">
+            <div class="card-header py-3">Lignes commandees</div>
+            <div class="table-responsive">
+                <table class="table table-sm align-middle mb-0">
+                    <thead><tr><th>Medicament</th><th class="text-end">Commandee</th><th class="text-end">Recue</th><th class="text-end">Reste</th><th class="text-end">P.U.</th><th class="text-end">Sous-total</th><th></th></tr></thead>
+                    <tbody>
+                    {% for ligne in lignes %}
+                        <tr>
+                            <td>{{ ligne.medicament }}</td>
+                            <td class="text-end">{{ ligne.quantite_commandee }}</td>
+                            <td class="text-end">{{ ligne.quantite_recue }}</td>
+                            <td class="text-end">{{ ligne.reste_a_recevoir }}</td>
+                            <td class="text-end">{{ ligne.prix_achat_unitaire|floatformat:0 }}</td>
+                            <td class="text-end">{{ ligne.sous_total|floatformat:0 }}</td>
+                            <td class="text-end">
+                                {% if commande.statut == "BROUILLON" and user|a_permission:"achats.change_commandeachat" %}
+                                    <form method="post" action="{% url 'achats:supprimer_ligne' commande.pk ligne.pk %}" data-confirm="Supprimer cette ligne ?">
+                                        {% csrf_token %}
+                                        <button class="btn btn-sm btn-outline-danger" type="submit"><i class="bi bi-trash"></i></button>
+                                    </form>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="7" class="text-center text-muted py-4">Aucune ligne.</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% if commande.statut == "BROUILLON" and user|a_permission:"achats.change_commandeachat" %}
+        <div class="carte mt-3">
+            <div class="card-header py-3">Ajouter une ligne</div>
+            <div class="card-body">
+                <form method="post" action="{% url 'achats:ajouter_ligne' commande.pk %}" class="row g-2 align-items-end">
+                    {% csrf_token %}
+                    {% for champ in formulaire_ligne %}
+                        <div class="col-md-4">
+                            <label class="form-label small" for="{{ champ.id_for_label }}">{{ champ.label }}</label>
+                            {{ champ }}
+                            {% for e in champ.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+                        </div>
+                    {% endfor %}
+                    <div class="col-md-12">
+                        <button class="btn btn-principal" type="submit"><i class="bi bi-plus-lg"></i> Ajouter</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="carte mt-3">
+    <div class="card-header py-3">Receptions liees</div>
+    <div class="table-responsive">
+        <table class="table table-sm align-middle mb-0">
+            <thead><tr><th>Bon</th><th>Date</th><th>Recu par</th><th>Statut</th><th></th></tr></thead>
+            <tbody>
+            {% for r in receptions %}
+                <tr>
+                    <td class="fw-semibold">{{ r.numero_bon }}</td>
+                    <td>{{ r.date_reception|date:"d/m/Y H:i" }}</td>
+                    <td>{{ r.recu_par.username|default:"-" }}</td>
+                    <td>{% if r.est_validee %}<span class="badge bg-success">Validee</span>{% else %}<span class="badge bg-warning text-dark">En attente</span>{% endif %}</td>
+                    <td class="text-end"><a class="btn btn-sm btn-outline-secondary" href="{% url 'achats:reception_detail' r.pk %}"><i class="bi bi-eye"></i></a></td>
+                </tr>
+            {% empty %}
+                <tr><td colspan="5" class="text-center text-muted py-4">Aucune reception.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

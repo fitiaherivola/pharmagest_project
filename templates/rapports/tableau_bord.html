@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+{% load permissions_extras %}
+{% block titre %}Tableau de bord{% endblock %}
+{% block entete %}Tableau de bord{% endblock %}
+{% block sous_entete %}Activite du {{ aujourdhui|date:"d/m/Y" }}{% endblock %}
+{% block contenu %}
+<div class="row g-3 mb-3">
+    <div class="col-sm-6 col-xl-4">
+        <div class="carte h-100"><div class="card-body">
+            <div class="stat-label">Ventes du jour</div>
+            <div class="stat-valeur">{{ resume.ventes_du_jour|floatformat:0 }} FCFA</div>
+            <div class="small text-muted">Chiffre d'affaires valide aujourd'hui</div>
+        </div></div>
+    </div>
+    <div class="col-sm-6 col-xl-4">
+        <div class="carte h-100"><div class="card-body">
+            <div class="stat-label">Encaissements confirmes</div>
+            <div class="stat-valeur">{{ resume.encaissements|floatformat:0 }} FCFA</div>
+            <div class="small text-muted">Paiements confirmes toutes periodes</div>
+        </div></div>
+    </div>
+    <div class="col-sm-6 col-xl-4">
+        <div class="carte h-100"><div class="card-body">
+            <div class="stat-label">Marge commerciale</div>
+            <div class="stat-valeur">{{ resume.marge_commerciale|floatformat:0 }} FCFA</div>
+            <div class="small text-muted">Estimee sur les ventes validees</div>
+        </div></div>
+    </div>
+    <div class="col-sm-6 col-xl-4">
+        <div class="carte h-100"><div class="card-body">
+            <div class="stat-label">Valeur du stock</div>
+            <div class="stat-valeur">{{ resume.valeur_stock|floatformat:0 }} FCFA</div>
+            <div class="small text-muted">Lots non perimes, au prix d'achat</div>
+        </div></div>
+    </div>
+    <div class="col-sm-6 col-xl-4">
+        <div class="carte h-100"><div class="card-body">
+            <div class="stat-label">Medicaments actifs</div>
+            <div class="stat-valeur">{{ resume.medicaments_actifs }}</div>
+            <div class="small text-muted"><a href="{% url 'medicaments:liste' %}">Voir le catalogue</a></div>
+        </div></div>
+    </div>
+    <div class="col-sm-6 col-xl-4">
+        <div class="carte h-100"><div class="card-body">
+            <div class="stat-label">Chiffre d'affaires global</div>
+            <div class="stat-valeur">{{ resume.chiffre_affaires|floatformat:0 }} FCFA</div>
+            <div class="small text-muted">Ventes validees</div>
+        </div></div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-xl-8">
+        <div class="carte">
+            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-graph-up"></i> Ventes des 7 derniers jours</span>
+                <a class="btn btn-sm btn-outline-secondary" href="{% url 'rapports:ventes' %}">Rapport detaille</a>
+            </div>
+            <div class="card-body">
+                {% for jour in ventes_7_jours %}
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <div class="text-muted small" style="width:70px">{{ jour.jour|date:"d/m" }}</div>
+                        <div class="mini-barre flex-grow-1">
+                            <span style="width:{% widthratio jour.total max_vente_jour 100 %}%"></span>
+                        </div>
+                        <div class="small fw-semibold text-end" style="width:110px">{{ jour.total|floatformat:0 }} F</div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="carte mt-3">
+            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-receipt"></i> Ventes recentes</span>
+                {% if user|a_permission:"ventes.add_vente" %}
+                    <a class="btn btn-sm btn-principal" href="{% url 'ventes:caisse' %}">Ouvrir la caisse</a>
+                {% endif %}
+            </div>
+            <div class="table-responsive">
+                <table class="table table-sm align-middle mb-0">
+                    <thead><tr><th>Numero</th><th>Date</th><th>Client</th><th>Caissier</th><th class="text-end">Total</th><th></th></tr></thead>
+                    <tbody>
+                    {% for v in ventes_recentes %}
+                        <tr>
+                            <td>{{ v.numero }}</td>
+                            <td>{{ v.date_vente|date:"d/m H:i" }}</td>
+                            <td>{{ v.client|default:"Comptoir" }}</td>
+                            <td>{{ v.caissier.username }}</td>
+                            <td class="text-end">{{ v.total|floatformat:0 }}</td>
+                            <td class="text-end"><a class="btn btn-sm btn-outline-secondary" href="{% url 'ventes:detail' v.pk %}"><i class="bi bi-eye"></i></a></td>
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="6" class="text-center text-muted py-4">Aucune vente.</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-4">
+        <div class="carte">
+            <div class="card-header py-3"><i class="bi bi-trophy"></i> Produits les plus vendus</div>
+            <div class="table-responsive">
+                <table class="table table-sm align-middle mb-0">
+                    <tbody>
+                    {% for produit in produits_plus_vendus %}
+                        <tr>
+                            <td>{{ produit.medicament__nom_commercial }}</td>
+                            <td class="text-end fw-semibold">{{ produit.quantite }}</td>
+                        </tr>
+                    {% empty %}
+                        <tr><td class="text-center text-muted py-3">Pas encore de ventes.</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="carte mt-3">
+            <div class="card-header py-3 d-flex justify-content-between">
+                <span><i class="bi bi-exclamation-triangle text-warning"></i> Stocks faibles</span>
+                <a class="small" href="{% url 'stock:alertes' %}">Tout voir</a>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-sm align-middle mb-0">
+                    <tbody>
+                    {% for m in stocks_faibles %}
+                        <tr>
+                            <td>{{ m.nom_commercial }}</td>
+                            <td class="text-end"><span class="badge bg-warning text-dark">{{ m.stock_disponible }} / {{ m.seuil_alerte }}</span></td>
+                        </tr>
+                    {% empty %}
+                        <tr><td class="text-center text-muted py-3">Aucun stock faible.</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="carte mt-3">
+            <div class="card-header py-3 d-flex justify-content-between">
+                <span><i class="bi bi-calendar-x text-warning"></i> Peremptions proches</span>
+                <a class="small" href="{% url 'rapports:peremptions' %}">Tout voir</a>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-sm align-middle mb-0">
+                    <tbody>
+                    {% for lot in proches_peremption %}
+                        <tr>
+                            <td>{{ lot.medicament.nom_commercial }}<div class="small text-muted">Lot {{ lot.numero_lot }}</div></td>
+                            <td class="text-end"><span class="badge bg-warning text-dark">J-{{ lot.jours_avant_peremption }}</span></td>
+                        </tr>
+                    {% empty %}
+                        <tr><td class="text-center text-muted py-3">Aucune peremption proche.</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        {% if perimes %}
+        <div class="carte mt-3 border-danger">
+            <div class="card-header py-3"><i class="bi bi-x-octagon text-danger"></i> Lots perimes en stock</div>
+            <ul class="list-group list-group-flush">
+                {% for lot in perimes %}
+                    <li class="list-group-item d-flex justify-content-between small">
+                        <span>{{ lot.medicament.nom_commercial }} - {{ lot.numero_lot }}</span>
+                        <span class="badge bg-danger">{{ lot.quantite_disponible }}</span>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

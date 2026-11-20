@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% load permissions_extras %}
+{% block titre %}Ventes{% endblock %}
+{% block entete %}Ventes{% endblock %}
+{% block contenu %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <form class="row g-2" method="get">
+        <div class="col-auto"><input class="form-control" type="search" name="q" value="{{ recherche }}" placeholder="Numero, client ou caissier"></div>
+        <div class="col-auto">
+            <select class="form-select" name="statut">
+                <option value="">Tous statuts</option>
+                {% for code, libelle in statuts %}<option value="{{ code }}" {% if statut == code %}selected{% endif %}>{{ libelle }}</option>{% endfor %}
+            </select>
+        </div>
+        <div class="col-auto"><input class="form-control" type="date" name="debut" value="{{ debut }}"></div>
+        <div class="col-auto"><input class="form-control" type="date" name="fin" value="{{ fin }}"></div>
+        <div class="col-auto"><button class="btn btn-outline-secondary" type="submit"><i class="bi bi-funnel"></i></button></div>
+    </form>
+    {% if user|a_permission:"ventes.add_vente" %}
+        <a class="btn btn-principal" href="{% url 'ventes:caisse' %}"><i class="bi bi-cash-register"></i> Ouvrir la caisse</a>
+    {% endif %}
+</div>
+<div class="carte">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead><tr><th>Numero</th><th>Date</th><th>Client</th><th>Caissier</th><th class="text-end">Articles</th><th class="text-end">Total</th><th>Statut</th><th class="text-end">Actions</th></tr></thead>
+            <tbody>
+            {% for v in page %}
+                <tr>
+                    <td><a class="fw-semibold text-decoration-none" href="{% url 'ventes:detail' v.pk %}">{{ v.numero }}</a></td>
+                    <td>{{ v.date_vente|date:"d/m/Y H:i" }}</td>
+                    <td>{{ v.client|default:"Comptoir" }}</td>
+                    <td>{{ v.caissier.nom_complet }}</td>
+                    <td class="text-end">{{ v.quantite_totale }}</td>
+                    <td class="text-end fw-semibold">{{ v.total|floatformat:0 }} FCFA</td>
+                    <td>
+                        {% if v.statut == "VALIDEE" %}<span class="badge bg-success">Validee</span>
+                        {% elif v.statut == "ANNULEE" %}<span class="badge bg-danger">Annulee</span>
+                        {% else %}<span class="badge bg-warning text-dark">En cours</span>{% endif %}
+                    </td>
+                    <td class="text-end text-nowrap">
+                        <a class="btn btn-sm btn-outline-secondary" href="{% url 'ventes:detail' v.pk %}"><i class="bi bi-eye"></i></a>
+                        <a class="btn btn-sm btn-outline-secondary" href="{% url 'ventes:recu_pdf' v.pk %}" target="_blank" title="Recu"><i class="bi bi-receipt"></i></a>
+                    </td>
+                </tr>
+            {% empty %}
+                <tr><td colspan="8" class="text-center text-muted py-4">Aucune vente.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% include "includes/pagination.html" %}
+{% endblock %}

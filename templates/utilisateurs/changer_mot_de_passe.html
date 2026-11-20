@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block titre %}Changer le mot de passe{% endblock %}
+{% block entete %}Changer le mot de passe{% endblock %}
+{% block contenu %}
+<div class="row justify-content-center">
+    <div class="col-lg-5">
+        <div class="carte">
+            <div class="card-body p-4">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label" for="ancien">Ancien mot de passe</label>
+                        <input class="form-control" type="password" name="ancien" id="ancien" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="nouveau">Nouveau mot de passe</label>
+                        <input class="form-control" type="password" name="nouveau" id="nouveau" minlength="8" required>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label" for="confirmation">Confirmation</label>
+                        <input class="form-control" type="password" name="confirmation" id="confirmation" minlength="8" required>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-principal" type="submit"><i class="bi bi-key"></i> Modifier</button>
+                        <a class="btn btn-outline-secondary" href="{% url 'utilisateurs:profil' %}">Annuler</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

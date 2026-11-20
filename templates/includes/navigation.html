@@ -1,0 +1,58 @@
+{% load permissions_extras %}
+<ul class="nav flex-column py-2">
+    <li><a class="nav-link" href="{% url 'tableau_bord' %}"><i class="bi bi-speedometer2 me-2"></i>Tableau de bord</a></li>
+
+    {% if user|a_permission:"ventes.add_vente" %}
+        <div class="nav-section">Comptoir</div>
+        <li><a class="nav-link" href="{% url 'ventes:caisse' %}"><i class="bi bi-cash-register me-2"></i>Caisse</a></li>
+        <li><a class="nav-link" href="{% url 'ventes:liste' %}"><i class="bi bi-receipt me-2"></i>Ventes</a></li>
+        <li><a class="nav-link" href="{% url 'clients:liste' %}"><i class="bi bi-people me-2"></i>Clients</a></li>
+    {% elif user|a_permission:"ventes.view_vente" %}
+        <div class="nav-section">Comptoir</div>
+        <li><a class="nav-link" href="{% url 'ventes:liste' %}"><i class="bi bi-receipt me-2"></i>Ventes</a></li>
+    {% endif %}
+
+    {% if user|a_permission:"medicaments.view_medicament" %}
+        <div class="nav-section">Catalogue</div>
+        <li><a class="nav-link" href="{% url 'medicaments:liste' %}"><i class="bi bi-capsule me-2"></i>Medicaments</a></li>
+        <li><a class="nav-link" href="{% url 'medicaments:categories' %}"><i class="bi bi-tags me-2"></i>Categories</a></li>
+    {% endif %}
+
+    {% if user|a_permission:"stock.view_lotstock" %}
+        <div class="nav-section">Stock</div>
+        <li><a class="nav-link" href="{% url 'stock:lots' %}"><i class="bi bi-box-seam me-2"></i>Lots</a></li>
+        <li><a class="nav-link" href="{% url 'stock:alertes' %}"><i class="bi bi-exclamation-triangle me-2"></i>Alertes</a></li>
+        <li><a class="nav-link" href="{% url 'stock:mouvements' %}"><i class="bi bi-arrow-left-right me-2"></i>Mouvements</a></li>
+        {% if user|a_permission:"stock.view_inventaire" %}
+            <li><a class="nav-link" href="{% url 'stock:inventaires' %}"><i class="bi bi-clipboard-check me-2"></i>Inventaires</a></li>
+        {% endif %}
+    {% endif %}
+
+    {% if user|a_permission:"achats.view_commandeachat" %}
+        <div class="nav-section">Achats</div>
+        <li><a class="nav-link" href="{% url 'achats:commandes' %}"><i class="bi bi-cart-check me-2"></i>Commandes</a></li>
+        <li><a class="nav-link" href="{% url 'achats:receptions' %}"><i class="bi bi-truck me-2"></i>Receptions</a></li>
+        <li><a class="nav-link" href="{% url 'fournisseurs:liste' %}"><i class="bi bi-building me-2"></i>Fournisseurs</a></li>
+    {% elif user|a_permission:"fournisseurs.view_fournisseur" %}
+        <div class="nav-section">Achats</div>
+        <li><a class="nav-link" href="{% url 'fournisseurs:liste' %}"><i class="bi bi-building me-2"></i>Fournisseurs</a></li>
+    {% endif %}
+
+    {% if user.is_superuser or user.role.nom == "Pharmacien" or user.role.nom == "Gestionnaire" or user.role.nom == "Administrateur" %}
+        <div class="nav-section">Pilotage</div>
+        <li><a class="nav-link" href="{% url 'rapports:ventes' %}"><i class="bi bi-graph-up me-2"></i>Rapport ventes</a></li>
+        <li><a class="nav-link" href="{% url 'rapports:achats' %}"><i class="bi bi-graph-up-arrow me-2"></i>Rapport achats</a></li>
+        <li><a class="nav-link" href="{% url 'rapports:stock' %}"><i class="bi bi-box me-2"></i>Rapport stock</a></li>
+        <li><a class="nav-link" href="{% url 'rapports:peremptions' %}"><i class="bi bi-calendar-x me-2"></i>Peremptions</a></li>
+    {% endif %}
+
+    {% if user|a_permission:"utilisateurs.view_utilisateur" %}
+        <div class="nav-section">Administration</div>
+        <li><a class="nav-link" href="{% url 'utilisateurs:liste' %}"><i class="bi bi-people-gear me-2"></i>Utilisateurs</a></li>
+        {% if user|a_permission:"utilisateurs.view_journalaudit" %}
+            <li><a class="nav-link" href="{% url 'utilisateurs:journal' %}"><i class="bi bi-journal-text me-2"></i>Journal d'audit</a></li>
+        {% endif %}
+    {% endif %}
+
+    <li><a class="nav-link" href="{% url 'utilisateurs:profil' %}"><i class="bi bi-person me-2"></i>Mon profil</a></li>
+</ul>

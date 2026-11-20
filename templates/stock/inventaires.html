@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% load permissions_extras %}
+{% block titre %}Inventaires{% endblock %}
+{% block entete %}Inventaires physiques{% endblock %}
+{% block contenu %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <a class="btn btn-outline-secondary" href="{% url 'stock:lots' %}"><i class="bi bi-box-seam"></i> Lots</a>
+    {% if user|a_permission:"stock.add_inventaire" %}
+        <a class="btn btn-principal" href="{% url 'stock:creer_inventaire' %}"><i class="bi bi-plus-lg"></i> Nouvel inventaire</a>
+    {% endif %}
+</div>
+<div class="carte">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead><tr><th>Date</th><th>Statut</th><th>Realise par</th><th class="text-end">Lignes</th><th class="text-end">Ecarts</th><th>Cree le</th><th></th></tr></thead>
+            <tbody>
+            {% for i in page %}
+                <tr>
+                    <td class="fw-semibold">{{ i.date_inventaire|date:"d/m/Y" }}</td>
+                    <td>
+                        {% if i.statut == "EN_COURS" %}<span class="badge bg-warning text-dark">En cours</span>
+                        {% elif i.statut == "VALIDE" %}<span class="badge bg-success">Valide</span>
+                        {% else %}<span class="badge bg-secondary">Annule</span>{% endif %}
+                    </td>
+                    <td>{{ i.realise_par.username|default:"-" }}</td>
+                    <td class="text-end">{{ i.lignes.count }}</td>
+                    <td class="text-end">{{ i.total_ecarts }}</td>
+                    <td>{{ i.date_creation|date:"d/m/Y H:i" }}</td>
+                    <td class="text-end"><a class="btn btn-sm btn-outline-secondary" href="{% url 'stock:inventaire_detail' i.pk %}"><i class="bi bi-eye"></i></a></td>
+                </tr>
+            {% empty %}
+                <tr><td colspan="7" class="text-center text-muted py-4">Aucun inventaire.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% include "includes/pagination.html" %}
+{% endblock %}

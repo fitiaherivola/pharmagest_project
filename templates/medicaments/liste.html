@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% load permissions_extras %}
+{% block titre %}Medicaments{% endblock %}
+{% block entete %}Medicaments{% endblock %}
+{% block sous_entete %}Catalogue, prix et disponibilites{% endblock %}
+{% block contenu %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <form class="row g-2" method="get">
+        <div class="col-auto"><input class="form-control" type="search" name="q" value="{{ recherche }}" placeholder="Nom ou code-barres"></div>
+        <div class="col-auto">
+            <select class="form-select" name="categorie">
+                <option value="">Toutes categories</option>
+                {% for c in categories %}
+                    <option value="{{ c.pk }}" {% if categorie_id == c.pk|stringformat:"s" %}selected{% endif %}>{{ c.nom }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-auto">
+            <select class="form-select" name="statut">
+                <option value="">Tous statuts</option>
+                <option value="ACTIF" {% if statut == "ACTIF" %}selected{% endif %}>Actif</option>
+                <option value="ARCHIVE" {% if statut == "ARCHIVE" %}selected{% endif %}>Archive</option>
+            </select>
+        </div>
+        <div class="col-auto">
+            <select class="form-select" name="tri">
+                <option value="nom" {% if tri == "nom" %}selected{% endif %}>Nom</option>
+                <option value="prix" {% if tri == "prix" %}selected{% endif %}>Prix</option>
+                <option value="stock" {% if tri == "stock" %}selected{% endif %}>Stock</option>
+                <option value="recent" {% if tri == "recent" %}selected{% endif %}>Plus recents</option>
+            </select>
+        </div>
+        <div class="col-auto"><button class="btn btn-outline-secondary" type="submit"><i class="bi bi-funnel"></i></button></div>
+    </form>
+    <div class="d-flex gap-2">
+        <a class="btn btn-outline-secondary" href="{% url 'medicaments:categories' %}"><i class="bi bi-tags"></i> Categories</a>
+        {% if user|a_permission:"medicaments.add_medicament" %}
+            <a class="btn btn-principal" href="{% url 'medicaments:creer' %}"><i class="bi bi-plus-lg"></i> Nouveau medicament</a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="carte">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+            <tr><th></th><th>Medicament</th><th>Categorie</th><th>Forme</th><th class="text-end">Prix vente</th><th class="text-center">Stock</th><th>Statut</th><th class="text-end">Actions</th></tr>
+            </thead>
+            <tbody>
+            {% for m in page %}
+                <tr>
+                    <td style="width:52px">
+                        {% if m.photo %}
+                            <img src="{{ m.photo.url }}" alt="" class="rounded" style="width:42px;height:42px;object-fit:cover">
+                        {% else %}
+                            <div class="rounded bg-light d-flex align-items-center justify-content-center" style="width:42px;height:42px"><i class="bi bi-capsule text-muted"></i></div>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a class="fw-semibold text-decoration-none" href="{% url 'medicaments:detail' m.pk %}">{{ m.nom_commercial }}</a>
+                        <div class="small text-muted">{{ m.dosage }} {% if m.code_barres %}&middot; {{ m.code_barres }}{% endif %}</div>
+                    </td>
+                    <td>{{ m.categorie.nom }}</td>
+                    <td>{{ m.get_forme_display }}</td>
+                    <td class="text-end">{{ m.prix_vente|floatformat:0 }} FCFA</td>
+                    <td class="text-center">
+                        {% if m.stock_disponible == 0 %}
+                            <span class="badge bg-danger">Rupture</span>
+                        {% elif m.stock_disponible <= m.seuil_alerte %}
+                            <span class="badge bg-warning text-dark">{{ m.stock_disponible }}</span>
+                        {% else %}
+                            <span class="badge bg-success">{{ m.stock_disponible }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if m.statut == "ACTIF" %}<span class="badge bg-success">Actif</span>
+                        {% else %}<span class="badge bg-secondary">Archive</span>{% endif %}
+                    </td>
+                    <td class="text-end text-nowrap">
+                        <a class="btn btn-sm btn-outline-secondary" href="{% url 'medicaments:detail' m.pk %}"><i class="bi bi-eye"></i></a>
+                        {% if user|a_permission:"medicaments.change_medicament" %}
+                            <a class="btn btn-sm btn-outline-secondary" href="{% url 'medicaments:modifier' m.pk %}"><i class="bi bi-pencil"></i></a>
+                            <form class="d-inline" method="post" action="{% url 'medicaments:basculer' m.pk %}" data-confirm="Changer le statut de ce medicament ?">
+                                {% csrf_token %}
+                                <button class="btn btn-sm btn-outline-secondary" type="submit" title="Archiver / reactiver"><i class="bi bi-archive"></i></button>
+                            </form>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% empty %}
+                <tr><td colspan="8" class="text-center text-muted py-4">Aucun medicament trouve.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% include "includes/pagination.html" %}
+{% endblock %}

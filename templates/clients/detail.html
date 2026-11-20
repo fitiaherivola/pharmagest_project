@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% load permissions_extras %}
+{% block titre %}{{ client }}{% endblock %}
+{% block entete %}{{ client }}{% endblock %}
+{% block sous_entete %}Client{% endblock %}
+{% block contenu %}
+<div class="row g-3">
+    <div class="col-lg-4">
+        <div class="carte">
+            <div class="card-body">
+                <dl class="row small mb-0">
+                    <dt class="col-5 text-muted">Telephone</dt><dd class="col-7">{{ client.telephone|default:"-" }}</dd>
+                    <dt class="col-5 text-muted">Adresse</dt><dd class="col-7">{{ client.adresse|default:"-" }}</dd>
+                    <dt class="col-5 text-muted">Statut</dt><dd class="col-7">{% if client.est_actif %}Actif{% else %}Inactif{% endif %}</dd>
+                    <dt class="col-5 text-muted">Total achats</dt><dd class="col-7 fw-semibold">{{ total|floatformat:0 }} FCFA</dd>
+                </dl>
+            </div>
+            <div class="card-footer bg-white d-flex gap-2">
+                <a class="btn btn-sm btn-outline-secondary" href="{% url 'clients:liste' %}">Retour</a>
+                {% if user|a_permission:"clients.change_client" %}
+                    <a class="btn btn-sm btn-principal" href="{% url 'clients:modifier' client.pk %}"><i class="bi bi-pencil"></i> Modifier</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-8">
+        <div class="carte">
+            <div class="card-header py-3">Historique des ventes</div>
+            <div class="table-responsive">
+                <table class="table table-sm align-middle mb-0">
+                    <thead><tr><th>Numero</th><th>Date</th><th>Statut</th><th class="text-end">Total</th><th></th></tr></thead>
+                    <tbody>
+                    {% for v in ventes %}
+                        <tr>
+                            <td class="fw-semibold">{{ v.numero }}</td>
+                            <td>{{ v.date_vente|date:"d/m/Y H:i" }}</td>
+                            <td><span class="badge badge-doux">{{ v.get_statut_display }}</span></td>
+                            <td class="text-end">{{ v.total|floatformat:0 }} FCFA</td>
+                            <td class="text-end"><a class="btn btn-sm btn-outline-secondary" href="{% url 'ventes:detail' v.pk %}"><i class="bi bi-eye"></i></a></td>
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="5" class="text-center text-muted py-4">Aucune vente.</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

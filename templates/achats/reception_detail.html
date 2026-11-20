@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% load permissions_extras %}
+{% block titre %}Reception {{ reception.numero_bon }}{% endblock %}
+{% block entete %}Reception {{ reception.numero_bon }}{% endblock %}
+{% block sous_entete %}Commande {{ reception.commande.numero }} &middot; {{ reception.commande.fournisseur.nom }}{% endblock %}
+{% block contenu %}
+<div class="d-flex flex-wrap gap-2 mb-3">
+    <a class="btn btn-outline-secondary" href="{% url 'achats:receptions' %}"><i class="bi bi-arrow-left"></i> Receptions</a>
+    <a class="btn btn-outline-secondary" href="{% url 'achats:bon_reception_pdf' reception.pk %}" target="_blank"><i class="bi bi-file-pdf"></i> Bon de reception</a>
+    {% if not reception.est_validee and user|a_permission:"achats.change_receptionachat" %}
+        <form method="post" action="{% url 'achats:valider_reception' reception.pk %}" data-confirm="Valider cette reception ? Le stock sera augmente.">
+            {% csrf_token %}
+            <button class="btn btn-principal" type="submit"><i class="bi bi-check2-circle"></i> Valider la reception</button>
+        </form>
+    {% endif %}
+</div>
+<div class="row g-3">
+    <div class="col-lg-4">
+        <div class="carte">
+            <div class="card-body">
+                <dl class="row small mb-0">
+                    <dt class="col-6 text-muted">Bon</dt><dd class="col-6">{{ reception.numero_bon }}</dd>
+                    <dt class="col-6 text-muted">Commande</dt><dd class="col-6">{{ reception.commande.numero }}</dd>
+                    <dt class="col-6 text-muted">Fournisseur</dt><dd class="col-6">{{ reception.commande.fournisseur.nom }}</dd>
+                    <dt class="col-6 text-muted">Date</dt><dd class="col-6">{{ reception.date_reception|date:"d/m/Y H:i" }}</dd>
+                    <dt class="col-6 text-muted">Recu par</dt><dd class="col-6">{{ reception.recu_par.username|default:"-" }}</dd>
+                    <dt class="col-6 text-muted">Montant</dt><dd class="col-6 fw-semibold">{{ montant|floatformat:0 }} FCFA</dd>
+                    <dt class="col-6 text-muted">Statut</dt><dd class="col-6">{% if reception.est_validee %}Validee{% else %}En attente{% endif %}</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-8">
+        <div class="carte">
+            <div class="card-header py-3">Lots receptionnes</div>
+            <div class="table-responsive">
+                <table class="table table-sm align-middle mb-0">
+                    <thead><tr><th>Medicament</th><th>Lot</th><th>Peremption</th><th class="text-end">Quantite</th><th class="text-end">P.U.</th><th class="text-end">Sous-total</th></tr></thead>
+                    <tbody>
+                    {% for ligne in lignes %}
+                        <tr>
+                            <td>{{ ligne.ligne_achat.medicament }}</td>
+                            <td>{{ ligne.numero_lot }}{% if ligne.lot %} <a class="small" href="{% url 'stock:lot_detail' ligne.lot_id %}">(voir)</a>{% endif %}</td>
+                            <td>{{ ligne.date_peremption|date:"d/m/Y" }}</td>
+                            <td class="text-end">{{ ligne.quantite_recue }}</td>
+                            <td class="text-end">{{ ligne.ligne_achat.prix_achat_unitaire|floatformat:0 }}</td>
+                            <td class="text-end">{{ ligne.sous_total|floatformat:0 }}</td>
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="6" class="text-center text-muted py-4">Aucune ligne.</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

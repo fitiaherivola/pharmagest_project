@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% load permissions_extras %}
+{% block titre %}Inventaire du {{ inventaire.date_inventaire|date:"d/m/Y" }}{% endblock %}
+{% block entete %}Inventaire du {{ inventaire.date_inventaire|date:"d/m/Y" }}{% endblock %}
+{% block sous_entete %}Statut : {{ inventaire.get_statut_display }} &middot; {{ inventaire.realise_par.username|default:"-" }}{% endblock %}
+{% block contenu %}
+<div class="d-flex flex-wrap gap-2 mb-3">
+    <a class="btn btn-outline-secondary" href="{% url 'stock:inventaires' %}"><i class="bi bi-arrow-left"></i> Inventaires</a>
+    {% if inventaire.statut == "EN_COURS" and user|a_permission:"stock.change_inventaire" %}
+        <form class="d-inline" method="post" action="{% url 'stock:annuler_inventaire' inventaire.pk %}" data-confirm="Annuler cet inventaire ?">
+            {% csrf_token %}
+            <button class="btn btn-outline-danger" type="submit"><i class="bi bi-x-lg"></i> Annuler l'inventaire</button>
+        </form>
+    {% endif %}
+</div>
+
+{% if inventaire.commentaire %}
+    <div class="alert alert-info py-2">{{ inventaire.commentaire }}</div>
+{% endif %}
+
+{% if inventaire.statut == "EN_COURS" and user|a_permission:"stock.change_inventaire" %}
+<form method="post" action="{% url 'stock:saisir_inventaire' inventaire.pk %}">
+    {% csrf_token %}
+    <div class="carte">
+        <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0">
+                <thead><tr><th>Medicament</th><th>Lot</th><th>Peremption</th><th class="text-end">Theorique</th><th style="width:150px">Compte</th><th class="text-end">Ecart</th></tr></thead>
+                <tbody>
+                {% for ligne in lignes %}
+                    <tr>
+                        <td>{{ ligne.lot.medicament }}</td>
+                        <td>{{ ligne.lot.numero_lot }}</td>
+                        <td>{{ ligne.lot.date_peremption|date:"d/m/Y" }}</td>
+                        <td class="text-end">{{ ligne.quantite_theorique }}</td>
+                        <td>
+                            <input class="form-control form-control-sm" type="number" min="0"
+                                   name="compte_{{ ligne.pk }}" value="{{ ligne.quantite_comptee }}">
+                        </td>
+                        <td class="text-end {% if ligne.ecart != 0 %}fw-semibold text-danger{% endif %}">{{ ligne.ecart|stringformat:"+d" }}</td>
+                    </tr>
+                {% empty %}
+                    <tr><td colspan="6" class="text-center text-muted py-4">Aucune ligne.</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="card-footer bg-white d-flex gap-2">
+            <button class="btn btn-outline-secondary" type="submit" name="action" value="enregistrer"><i class="bi bi-save"></i> Enregistrer les comptages</button>
+            <button class="btn btn-principal" type="submit" name="action" value="valider" data-confirm="Valider l'inventaire et appliquer les corrections de stock ?">
+                <i class="bi bi-check2-circle"></i> Valider et corriger le stock
+            </button>
+        </div>
+    </div>
+</form>
+{% else %}
+<div class="carte">
+    <div class="table-responsive">
+        <table class="table table-sm align-middle mb-0">
+            <thead><tr><th>Medicament</th><th>Lot</th><th>Peremption</th><th class="text-end">Theorique</th><th class="text-end">Compte</th><th class="text-end">Ecart</th></tr></thead>
+            <tbody>
+            {% for ligne in lignes %}
+                <tr>
+                    <td>{{ ligne.lot.medicament }}</td>
+                    <td>{{ ligne.lot.numero_lot }}</td>
+                    <td>{{ ligne.lot.date_peremption|date:"d/m/Y" }}</td>
+                    <td class="text-end">{{ ligne.quantite_theorique }}</td>
+                    <td class="text-end">{{ ligne.quantite_comptee }}</td>
+                    <td class="text-end {% if ligne.ecart != 0 %}fw-semibold text-danger{% endif %}">{{ ligne.ecart|stringformat:"+d" }}</td>
+                </tr>
+            {% empty %}
+                <tr><td colspan="6" class="text-center text-muted py-4">Aucune ligne.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

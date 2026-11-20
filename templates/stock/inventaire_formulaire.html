@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block titre %}{{ titre }}{% endblock %}
+{% block entete %}{{ titre }}{% endblock %}
+{% block contenu %}
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="carte">
+            <div class="card-body p-4">
+                <p class="text-muted small">
+                    Les lignes sont creees automatiquement pour chaque lot disposant de stock.
+                    Les ecarts genereront des mouvements de type INVENTAIRE a la validation.
+                </p>
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    {% include "includes/champs_formulaire.html" %}
+                    <div class="d-flex gap-2 mt-4">
+                        <button class="btn btn-principal" type="submit"><i class="bi bi-check-lg"></i> Creer</button>
+                        <a class="btn btn-outline-secondary" href="{% url 'stock:inventaires' %}">Annuler</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

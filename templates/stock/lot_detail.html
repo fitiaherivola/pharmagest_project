@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% load permissions_extras %}
+{% block titre %}Lot {{ lot.numero_lot }}{% endblock %}
+{% block entete %}Lot {{ lot.numero_lot }}{% endblock %}
+{% block sous_entete %}{{ lot.medicament }}{% endblock %}
+{% block contenu %}
+<div class="row g-3">
+    <div class="col-lg-4">
+        <div class="carte">
+            <div class="card-body">
+                <dl class="row small mb-0">
+                    <dt class="col-6 text-muted">Medicament</dt><dd class="col-6">{{ lot.medicament }}</dd>
+                    <dt class="col-6 text-muted">Peremption</dt><dd class="col-6">{{ lot.date_peremption|date:"d/m/Y" }}</dd>
+                    <dt class="col-6 text-muted">Jours restants</dt><dd class="col-6">{{ lot.jours_avant_peremption }}</dd>
+                    <dt class="col-6 text-muted">Quantite recue</dt><dd class="col-6">{{ lot.quantite_recue }}</dd>
+                    <dt class="col-6 text-muted">Disponible</dt><dd class="col-6 fw-semibold">{{ lot.quantite_disponible }}</dd>
+                    <dt class="col-6 text-muted">Reception</dt><dd class="col-6">{{ lot.date_reception|date:"d/m/Y" }}</dd>
+                    <dt class="col-6 text-muted">Blocage</dt><dd class="col-6">{% if lot.est_bloque %}Oui{% else %}Non{% endif %}</dd>
+                    {% if lot.motif_blocage %}<dt class="col-6 text-muted">Motif</dt><dd class="col-6">{{ lot.motif_blocage }}</dd>{% endif %}
+                </dl>
+            </div>
+            <div class="card-footer bg-white d-flex gap-2">
+                <a class="btn btn-sm btn-outline-secondary" href="{% url 'stock:lots' %}">Retour</a>
+                {% if user|a_permission:"stock.change_lotstock" %}
+                    <a class="btn btn-sm btn-principal" href="{% url 'stock:modifier_lot' lot.pk %}"><i class="bi bi-pencil"></i> Modifier</a>
+                    <form method="post" action="{% url 'stock:basculer_blocage' lot.pk %}">
+                        {% csrf_token %}
+                        {% if lot.est_bloque %}
+                            <button class="btn btn-sm btn-outline-success" type="submit"><i class="bi bi-unlock"></i> Debloquer</button>
+                        {% else %}
+                            <input type="hidden" name="motif" value="Blocage manuel">
+                            <button class="btn btn-sm btn-outline-warning" type="submit"><i class="bi bi-lock"></i> Bloquer</button>
+                        {% endif %}
+                    </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-8">
+        <div class="carte">
+            <div class="card-header py-3">Mouvements du lot</div>
+            <div class="table-responsive">
+                <table class="table table-sm align-middle mb-0">
+                    <thead><tr><th>Date</th><th>Type</th><th class="text-end">Quantite</th><th class="text-end">Stock apres</th><th>Utilisateur</th><th>Motif</th></tr></thead>
+                    <tbody>
+                    {% for m in mouvements %}
+                        <tr>
+                            <td class="text-nowrap">{{ m.date_mouvement|date:"d/m/Y H:i" }}</td>
+                            <td><span class="badge badge-doux">{{ m.get_type_display }}</span></td>
+                            <td class="text-end {% if m.quantite < 0 %}text-danger{% else %}text-success{% endif %}">{{ m.quantite|stringformat:"+d" }}</td>
+                            <td class="text-end">{{ m.stock_apres }}</td>
+                            <td>{{ m.utilisateur.username|default:"-" }}</td>
+                            <td class="small text-muted">{{ m.motif|default:"-" }}</td>
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="6" class="text-center text-muted py-4">Aucun mouvement.</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

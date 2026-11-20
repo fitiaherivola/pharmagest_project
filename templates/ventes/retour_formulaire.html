@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block titre %}Retour sur la vente {{ vente.numero }}{% endblock %}
+{% block entete %}Retour / remboursement{% endblock %}
+{% block sous_entete %}Vente {{ vente.numero }} &middot; {{ vente.total|floatformat:0 }} FCFA{% endblock %}
+{% block contenu %}
+<div class="row justify-content-center">
+    <div class="col-lg-7">
+        <div class="carte mb-3">
+            <div class="card-header py-3">Lignes de la vente</div>
+            <div class="table-responsive">
+                <table class="table table-sm align-middle mb-0">
+                    <thead><tr><th>Medicament</th><th>Lot</th><th class="text-end">Vendue</th><th class="text-end">Deja retournee</th><th class="text-end">Retournable</th><th class="text-end">P.U.</th></tr></thead>
+                    <tbody>
+                    {% for ligne in vente.lignes.all %}
+                        <tr>
+                            <td>{{ ligne.medicament }}</td>
+                            <td>{{ ligne.lot.numero_lot }}</td>
+                            <td class="text-end">{{ ligne.quantite }}</td>
+                            <td class="text-end">{{ ligne.quantite_retournee }}</td>
+                            <td class="text-end fw-semibold">{{ ligne.quantite_restante_retournable }}</td>
+                            <td class="text-end">{{ ligne.prix_unitaire_applique|floatformat:0 }}</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="carte">
+            <div class="card-body p-4">
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    {% if formulaire.non_field_errors %}
+                        <div class="alert alert-danger py-2">{{ formulaire.non_field_errors }}</div>
+                    {% endif %}
+                    {% for champ in formulaire %}
+                        <div class="mb-3">
+                            <label class="form-label" for="{{ champ.id_for_label }}">{{ champ.label }}</label>
+                            {{ champ }}
+                            {% if champ.help_text %}<div class="form-text">{{ champ.help_text }}</div>{% endif %}
+                            {% for e in champ.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+                        </div>
+                    {% endfor %}
+                    <div class="alert alert-info py-2 small">
+                        Le remboursement est calcule au prix unitaire de la ligne. Le stock n'est remis
+                        que si le lot d'origine est encore delivrable.
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-principal" type="submit"><i class="bi bi-check2-circle"></i> Enregistrer le retour</button>
+                        <a class="btn btn-outline-secondary" href="{% url 'ventes:detail' vente.pk %}">Annuler</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

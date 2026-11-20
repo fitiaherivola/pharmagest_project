@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block titre %}Receptionner {{ commande.numero }}{% endblock %}
+{% block entete %}Receptionner la commande {{ commande.numero }}{% endblock %}
+{% block sous_entete %}{{ commande.fournisseur.nom }}{% endblock %}
+{% block contenu %}
+<div class="alert alert-info py-2 small">
+    La validation de la reception cree les lots et augmente le stock une seule fois.
+    Une quantite nulle laisse la ligne non receptionnee.
+</div>
+<form method="post">
+    {% csrf_token %}
+    <div class="carte">
+        <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0">
+                <thead><tr><th>Medicament</th><th class="text-end">Commandee</th><th class="text-end">Deja recue</th><th class="text-end">Reste</th><th style="width:120px">Qte recue</th><th style="width:170px">N lot</th><th style="width:170px">Peremption</th></tr></thead>
+                <tbody>
+                {% for ligne in lignes %}
+                    <tr>
+                        <td>{{ ligne.medicament }}</td>
+                        <td class="text-end">{{ ligne.quantite_commandee }}</td>
+                        <td class="text-end">{{ ligne.quantite_recue }}</td>
+                        <td class="text-end fw-semibold">{{ ligne.reste_a_recevoir }}</td>
+                        {% if ligne.reste_a_recevoir > 0 %}
+                            <td><input class="form-control form-control-sm" type="number" min="0" max="{{ ligne.reste_a_recevoir }}" name="qte_{{ ligne.pk }}" value="{{ ligne.reste_a_recevoir }}"></td>
+                            <td><input class="form-control form-control-sm" type="text" name="lot_{{ ligne.pk }}" placeholder="Numero de lot" required></td>
+                            <td><input class="form-control form-control-sm" type="date" name="peremption_{{ ligne.pk }}" min="{% now 'Y-m-d' %}" required></td>
+                        {% else %}
+                            <td colspan="3" class="text-center text-muted">Solde</td>
+                        {% endif %}
+                    </tr>
+                {% empty %}
+                    <tr><td colspan="7" class="text-center text-muted py-4">Aucune ligne.</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="card-footer bg-white d-flex gap-2">
+            <button class="btn btn-principal" type="submit"><i class="bi bi-check2-circle"></i> Valider la reception</button>
+            <a class="btn btn-outline-secondary" href="{% url 'achats:commande_detail' commande.pk %}">Annuler</a>
+        </div>
+    </div>
+</form>
+{% endblock %}

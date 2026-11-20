@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% load permissions_extras %}
+{% block titre %}Categories{% endblock %}
+{% block entete %}Categories de medicaments{% endblock %}
+{% block contenu %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <a class="btn btn-outline-secondary" href="{% url 'medicaments:liste' %}"><i class="bi bi-arrow-left"></i> Medicaments</a>
+    {% if user|a_permission:"medicaments.add_categorie" %}
+        <a class="btn btn-principal" href="{% url 'medicaments:creer_categorie' %}"><i class="bi bi-plus-lg"></i> Nouvelle categorie</a>
+    {% endif %}
+</div>
+<div class="carte">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead><tr><th>Nom</th><th>Description</th><th class="text-center">Medicaments</th><th class="text-end">Actions</th></tr></thead>
+            <tbody>
+            {% for c in categories %}
+                <tr>
+                    <td class="fw-semibold">{{ c.nom }}</td>
+                    <td class="text-muted">{{ c.description|default:"-" }}</td>
+                    <td class="text-center"><span class="badge badge-doux">{{ c.nb_medicaments }}</span></td>
+                    <td class="text-end text-nowrap">
+                        {% if user|a_permission:"medicaments.change_categorie" %}
+                            <a class="btn btn-sm btn-outline-secondary" href="{% url 'medicaments:modifier_categorie' c.pk %}"><i class="bi bi-pencil"></i></a>
+                        {% endif %}
+                        {% if user|a_permission:"medicaments.delete_categorie" %}
+                            <form class="d-inline" method="post" action="{% url 'medicaments:supprimer_categorie' c.pk %}" data-confirm="Supprimer cette categorie ? (refuse si utilisee)">
+                                {% csrf_token %}
+                                <button class="btn btn-sm btn-outline-danger" type="submit"><i class="bi bi-trash"></i></button>
+                            </form>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% empty %}
+                <tr><td colspan="4" class="text-center text-muted py-4">Aucune categorie.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

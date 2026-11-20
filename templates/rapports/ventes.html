@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block titre %}Rapport des ventes{% endblock %}
+{% block entete %}Rapport des ventes{% endblock %}
+{% block sous_entete %}Activite commerciale par periode{% endblock %}
+{% block contenu %}
+<div class="d-flex flex-wrap justify-content-between align-items-end gap-2 mb-3">
+    <form class="row g-2" method="get">
+        <div class="col-auto"><label class="form-label small mb-0">Du</label><input class="form-control" type="date" name="debut" value="{{ debut }}"></div>
+        <div class="col-auto"><label class="form-label small mb-0">Au</label><input class="form-control" type="date" name="fin" value="{{ fin }}"></div>
+        <div class="col-auto"><button class="btn btn-outline-secondary" type="submit"><i class="bi bi-funnel"></i> Filtrer</button></div>
+    </form>
+    <a class="btn btn-outline-secondary" href="{% url 'rapports:ventes_pdf' %}{% if debut or fin %}?debut={{ debut }}&fin={{ fin }}{% endif %}" target="_blank"><i class="bi bi-file-pdf"></i> PDF</a>
+</div>
+
+<div class="row g-3 mb-3">
+    <div class="col-sm-6 col-xl-3"><div class="carte h-100"><div class="card-body">
+        <div class="stat-label">Ventes validees</div><div class="stat-valeur">{{ total|floatformat:0 }}</div><div class="small text-muted">FCFA</div>
+    </div></div></div>
+    <div class="col-sm-6 col-xl-3"><div class="carte h-100"><div class="card-body">
+        <div class="stat-label">Chiffre d'affaires</div><div class="stat-valeur">{{ ca|floatformat:0 }}</div><div class="small text-muted">FCFA</div>
+    </div></div></div>
+    <div class="col-sm-6 col-xl-3"><div class="carte h-100"><div class="card-body">
+        <div class="stat-label">Encaissements</div><div class="stat-valeur">{{ encaissements|floatformat:0 }}</div><div class="small text-muted">Paiements confirmes</div>
+    </div></div></div>
+    <div class="col-sm-6 col-xl-3"><div class="carte h-100"><div class="card-body">
+        <div class="stat-label">Marge estimee</div><div class="stat-valeur">{{ marge|floatformat:0 }}</div><div class="small text-muted">FCFA</div>
+    </div></div></div>
+</div>
+
+<div class="row g-3">
+    <div class="col-xl-8">
+        <div class="carte">
+            <div class="card-header py-3">Ventes</div>
+            <div class="table-responsive">
+                <table class="table table-sm table-hover align-middle mb-0">
+                    <thead><tr><th>Numero</th><th>Date</th><th>Client</th><th>Caissier</th><th class="text-end">Total</th><th>Statut</th></tr></thead>
+                    <tbody>
+                    {% for v in page %}
+                        <tr>
+                            <td><a class="text-decoration-none" href="{% url 'ventes:detail' v.pk %}">{{ v.numero }}</a></td>
+                            <td>{{ v.date_vente|date:"d/m/Y H:i" }}</td>
+                            <td>{{ v.client|default:"Comptoir" }}</td>
+                            <td>{{ v.caissier.username }}</td>
+                            <td class="text-end">{{ v.total|floatformat:0 }}</td>
+                            <td>
+                                {% if v.statut == "VALIDEE" %}<span class="badge bg-success">Validee</span>
+                                {% elif v.statut == "ANNULEE" %}<span class="badge bg-danger">Annulee</span>
+                                {% else %}<span class="badge bg-warning text-dark">En cours</span>{% endif %}
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="6" class="text-center text-muted py-4">Aucune vente sur la periode.</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% include "includes/pagination.html" %}
+    </div>
+    <div class="col-xl-4">
+        <div class="carte">
+            <div class="card-header py-3"><i class="bi bi-trophy"></i> Produits les plus vendus</div>
+            <div class="table-responsive">
+                <table class="table table-sm align-middle mb-0">
+                    <thead><tr><th>Medicament</th><th class="text-end">Quantite</th></tr></thead>
+                    <tbody>
+                    {% for produit in produits %}
+                        <tr><td>{{ produit.medicament__nom_commercial }}</td><td class="text-end fw-semibold">{{ produit.quantite }}</td></tr>
+                    {% empty %}
+                        <tr><td colspan="2" class="text-center text-muted py-4">Aucune donnee.</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

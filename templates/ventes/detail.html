@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+{% load permissions_extras %}
+{% block titre %}Vente {{ vente.numero }}{% endblock %}
+{% block entete %}Vente {{ vente.numero }}{% endblock %}
+{% block sous_entete %}{{ vente.date_vente|date:"d/m/Y H:i" }} &middot; {{ vente.get_statut_display }}{% endblock %}
+{% block contenu %}
+<div class="d-flex flex-wrap gap-2 mb-3">
+    <a class="btn btn-outline-secondary" href="{% url 'ventes:liste' %}"><i class="bi bi-arrow-left"></i> Ventes</a>
+    <a class="btn btn-outline-secondary" href="{% url 'ventes:recu_pdf' vente.pk %}" target="_blank"><i class="bi bi-receipt"></i> Recu</a>
+    <a class="btn btn-outline-secondary" href="{% url 'ventes:facture_pdf' vente.pk %}" target="_blank"><i class="bi bi-file-pdf"></i> Facture</a>
+    {% if vente.statut == "VALIDEE" and user|a_permission:"ventes.add_retourvente" %}
+        <a class="btn btn-principal" href="{% url 'ventes:retour' vente.pk %}"><i class="bi bi-arrow-return-left"></i> Retour / remboursement</a>
+    {% endif %}
+    {% if vente.statut == "VALIDEE" and user|a_permission:"ventes.change_vente" %}
+        <button class="btn btn-outline-danger" type="button" data-bs-toggle="collapse" data-bs-target="#bloc-annulation">
+            <i class="bi bi-x-octagon"></i> Annuler la vente
+        </button>
+    {% endif %}
+</div>
+
+{% if vente.statut == "VALIDEE" and user|a_permission:"ventes.change_vente" %}
+<div class="collapse mb-3" id="bloc-annulation">
+    <div class="carte border-danger">
+        <div class="card-body">
+            <form method="post" action="{% url 'ventes:annuler' vente.pk %}" class="row g-2 align-items-end" data-confirm="Annuler la vente et remettre le stock delivrable ?">
+                {% csrf_token %}
+                <div class="col-md-9">
+                    <label class="form-label small">Motif d'annulation obligatoire</label>
+                    <input class="form-control" type="text" name="motif" required>
+                </div>
+                <div class="col-md-3">
+                    <button class="btn btn-danger w-100" type="submit">Confirmer l'annulation</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="row g-3">
+    <div class="col-lg-4">
+        <div class="carte">
+            <div class="card-body">
+                <dl class="row small mb-0">
+                    <dt class="col-6 text-muted">Numero</dt><dd class="col-6">{{ vente.numero }}</dd>
+                    <dt class="col-6 text-muted">Date</dt><dd class="col-6">{{ vente.date_vente|date:"d/m/Y H:i" }}</dd>
+                    <dt class="col-6 text-muted">Client</dt><dd class="col-6">{{ vente.client|default:"Comptoir" }}</dd>
+                    <dt class="col-6 text-muted">Caissier</dt><dd class="col-6">{{ vente.caissier.nom_complet }}</dd>
+                    <dt class="col-6 text-muted">Statut</dt><dd class="col-6">{{ vente.get_statut_display }}</dd>
+                    <dt class="col-6 text-muted">Total</dt><dd class="col-6 fw-semibold">{{ vente.total|floatformat:0 }} FCFA</dd>
+                </dl>
+                {% if vente.motif_annulation %}<div class="alert alert-warning mt-3 py-2 small mb-0">{{ vente.motif_annulation }}</div>{% endif %}
+            </div>
+        </div>
+        <div class="carte mt-3">
+            <div class="card-header py-3">Paiements</div>
+            <div class="table-responsive">
+                <table class="table table-sm align-middle mb-0">
+                    <thead><tr><th>Mode</th><th class="text-end">Montant</th><th>Statut</th><th></th></tr></thead>
+                    <tbody>
+                    {% for p in paiements %}
+                        <tr>
+                            <td>{{ p.get_mode_display }}<div class="small text-muted">{{ p.reference_transaction }}</div></td>
+                            <td class="text-end">{{ p.montant|floatformat:0 }}</td>
+                            <td><span class="badge badge-doux">{{ p.get_statut_display }}</span></td>
+                            <td class="text-end">
+                                {% if p.statut == "EN_ATTENTE" and user|a_permission:"ventes.change_paiement" %}
+                                    <form method="post" action="{% url 'ventes:confirmer_paiement' p.pk %}">
+                                        {% csrf_token %}
+                                        <button class="btn btn-sm btn-outline-success" type="submit">Confirmer</button>
+                                    </form>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="4" class="text-center text-muted py-3">Aucun paiement.</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-8">
+        <div class="carte">
+            <div class="card-header py-3">Lignes de vente (prix figes)</div>
+            <div class="table-responsive">
+                <table class="table table-sm align-middle mb-0">
+                    <thead><tr><th>Medicament</th><th>Lot</th><th class="text-end">Qte</th><th class="text-end">P.U.</th><th class="text-end">Sous-total</th><th class="text-end">Retournable</th></tr></thead>
+                    <tbody>
+                    {% for ligne in lignes %}
+                        <tr>
+                            <td>{{ ligne.medicament }}</td>
+                            <td>{{ ligne.lot.numero_lot }}</td>
+                            <td class="text-end">{{ ligne.quantite }}</td>
+                            <td class="text-end">{{ ligne.prix_unitaire_applique|floatformat:0 }}</td>
+                            <td class="text-end fw-semibold">{{ ligne.sous_total|floatformat:0 }}</td>
+                            <td class="text-end">{{ ligne.quantite_restante_retournable }}</td>
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="6" class="text-center text-muted py-4">Aucune ligne.</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="carte mt-3">
+            <div class="card-header py-3">Retours</div>
+            <div class="table-responsive">
+                <table class="table table-sm align-middle mb-0">
+                    <thead><tr><th>Date</th><th>Medicament</th><th class="text-end">Qte</th><th class="text-end">Rembourse</th><th>Remis en stock</th><th>Motif</th><th>Valide</th></tr></thead>
+                    <tbody>
+                    {% for r in retours %}
+                        <tr>
+                            <td>{{ r.date_retour|date:"d/m/Y H:i" }}</td>
+                            <td>{{ r.ligne_vente.medicament }}</td>
+                            <td class="text-end">{{ r.quantite_retournee }}</td>
+                            <td class="text-end">{{ r.montant_rembourse|floatformat:0 }}</td>
+                            <td>{% if r.remis_en_stock %}Oui{% else %}Non{% endif %}</td>
+                            <td class="small">{{ r.motif }}</td>
+                            <td>{% if r.est_valide %}<span class="badge bg-success">Oui</span>{% else %}<span class="badge bg-secondary">Non</span>{% endif %}</td>
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="7" class="text-center text-muted py-4">Aucun retour.</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

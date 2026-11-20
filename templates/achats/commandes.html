@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% load permissions_extras %}
+{% block titre %}Commandes d'achat{% endblock %}
+{% block entete %}Commandes d'achat{% endblock %}
+{% block sous_entete %}Brouillons, commandes, receptions et statuts{% endblock %}
+{% block contenu %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <form class="row g-2" method="get">
+        <div class="col-auto"><input class="form-control" type="search" name="q" value="{{ recherche }}" placeholder="Numero ou fournisseur"></div>
+        <div class="col-auto">
+            <select class="form-select" name="statut">
+                <option value="">Tous statuts</option>
+                {% for code, libelle in statuts %}
+                    <option value="{{ code }}" {% if statut == code %}selected{% endif %}>{{ libelle }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-auto">
+            <select class="form-select" name="fournisseur">
+                <option value="">Tous fournisseurs</option>
+                {% for f in fournisseurs %}
+                    <option value="{{ f.pk }}" {% if fournisseur_id == f.pk|stringformat:"s" %}selected{% endif %}>{{ f.nom }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-auto"><button class="btn btn-outline-secondary" type="submit"><i class="bi bi-funnel"></i></button></div>
+    </form>
+    <div class="d-flex gap-2">
+        <a class="btn btn-outline-secondary" href="{% url 'achats:receptions' %}"><i class="bi bi-truck"></i> Receptions</a>
+        {% if user|a_permission:"achats.add_commandeachat" %}
+            <a class="btn btn-principal" href="{% url 'achats:creer_commande' %}"><i class="bi bi-plus-lg"></i> Nouvelle commande</a>
+        {% endif %}
+    </div>
+</div>
+<div class="carte">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead><tr><th>Numero</th><th>Fournisseur</th><th>Date</th><th>Statut</th><th class="text-end">Montant</th><th>Cree par</th><th class="text-end">Actions</th></tr></thead>
+            <tbody>
+            {% for c in page %}
+                <tr>
+                    <td><a class="fw-semibold text-decoration-none" href="{% url 'achats:commande_detail' c.pk %}">{{ c.numero }}</a></td>
+                    <td>{{ c.fournisseur.nom }}</td>
+                    <td>{{ c.date_creation|date:"d/m/Y" }}</td>
+                    <td>
+                        {% if c.statut == "BROUILLON" %}<span class="badge bg-secondary">Brouillon</span>
+                        {% elif c.statut == "COMMANDEE" %}<span class="badge bg-primary">Commandee</span>
+                        {% elif c.statut == "PARTIELLE" %}<span class="badge bg-warning text-dark">Partielle</span>
+                        {% elif c.statut == "COMPLETE" %}<span class="badge bg-success">Complete</span>
+                        {% else %}<span class="badge bg-danger">Annulee</span>{% endif %}
+                    </td>
+                    <td class="text-end">{{ c.montant_total|floatformat:0 }} FCFA</td>
+                    <td>{{ c.cree_par.username|default:"-" }}</td>
+                    <td class="text-end text-nowrap">
+                        <a class="btn btn-sm btn-outline-secondary" href="{% url 'achats:commande_detail' c.pk %}"><i class="bi bi-eye"></i></a>
+                        {% if c.est_receptionnable %}
+                            <a class="btn btn-sm btn-outline-success" href="{% url 'achats:creer_reception' c.pk %}" title="Receptionner"><i class="bi bi-box-arrow-in-down"></i></a>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% empty %}
+                <tr><td colspan="7" class="text-center text-muted py-4">Aucune commande.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% include "includes/pagination.html" %}
+{% endblock %}

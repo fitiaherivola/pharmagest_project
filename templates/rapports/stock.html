@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block titre %}Rapport de stock{% endblock %}
+{% block entete %}Rapport de stock{% endblock %}
+{% block sous_entete %}Valorisation et etat des lots{% endblock %}
+{% block contenu %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <div class="d-flex gap-3">
+        <div class="carte px-4 py-2">
+            <div class="stat-label">Valeur du stock</div>
+            <div class="stat-valeur">{{ valeur_totale|floatformat:0 }} FCFA</div>
+        </div>
+        <div class="carte px-4 py-2">
+            <div class="stat-label">Lots</div>
+            <div class="stat-valeur">{{ lots|length }}</div>
+        </div>
+    </div>
+    <div class="d-flex gap-2">
+        <a class="btn btn-outline-secondary" href="{% url 'rapports:stock_pdf' %}" target="_blank"><i class="bi bi-file-pdf"></i> PDF</a>
+        <a class="btn btn-outline-secondary" href="{% url 'stock:lots' %}"><i class="bi bi-box-seam"></i> Lots</a>
+    </div>
+</div>
+<div class="carte">
+    <div class="table-responsive">
+        <table class="table table-sm table-hover align-middle mb-0">
+            <thead><tr><th>Medicament</th><th>Lot</th><th>Peremption</th><th class="text-end">Recu</th><th class="text-end">Disponible</th><th class="text-end">P.A.</th><th class="text-end">Valeur</th><th>Etat</th></tr></thead>
+            <tbody>
+            {% for lot in lots %}
+                <tr>
+                    <td>{{ lot.medicament.nom_commercial }} <span class="small text-muted">{{ lot.medicament.dosage }}</span></td>
+                    <td>{{ lot.numero_lot }}</td>
+                    <td>{{ lot.date_peremption|date:"d/m/Y" }}</td>
+                    <td class="text-end">{{ lot.quantite_recue }}</td>
+                    <td class="text-end fw-semibold">{{ lot.quantite_disponible }}</td>
+                    <td class="text-end">{{ lot.medicament.prix_achat|floatformat:0 }}</td>
+                    <td class="text-end">{{ lot.valeur_stock|floatformat:0 }}</td>
+                    <td>
+                        {% if lot.est_perime %}<span class="badge bg-danger">Perime</span>
+                        {% elif lot.est_bloque %}<span class="badge bg-secondary">Bloque</span>
+                        {% elif lot.quantite_disponible == 0 %}<span class="badge bg-light text-dark">Epuise</span>
+                        {% else %}<span class="badge bg-success">Disponible</span>{% endif %}
+                    </td>
+                </tr>
+            {% empty %}
+                <tr><td colspan="8" class="text-center text-muted py-4">Aucun lot.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="carte mt-3">
+    <div class="card-header py-3"><i class="bi bi-exclamation-triangle text-warning"></i> Stocks faibles</div>
+    <div class="table-responsive">
+        <table class="table table-sm align-middle mb-0">
+            <thead><tr><th>Medicament</th><th class="text-end">Stock disponible</th><th class="text-end">Seuil</th><th></th></tr></thead>
+            <tbody>
+            {% for m in stocks_faibles %}
+                <tr>
+                    <td>{{ m.nom_commercial }}</td>
+                    <td class="text-end fw-semibold">{{ m.stock_disponible }}</td>
+                    <td class="text-end text-muted">{{ m.seuil_alerte }}</td>
+                    <td class="text-end"><a class="btn btn-sm btn-outline-secondary" href="{% url 'medicaments:detail' m.pk %}"><i class="bi bi-eye"></i></a></td>
+                </tr>
+            {% empty %}
+                <tr><td colspan="4" class="text-center text-muted py-4">Aucun stock faible.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

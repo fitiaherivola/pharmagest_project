@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block titre %}Receptions d'achat{% endblock %}
+{% block entete %}Receptions d'achat{% endblock %}
+{% block contenu %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <form class="d-flex gap-2" method="get">
+        <input class="form-control" type="search" name="q" value="{{ recherche }}" placeholder="Bon, commande ou fournisseur">
+        <button class="btn btn-outline-secondary" type="submit"><i class="bi bi-search"></i></button>
+    </form>
+    <a class="btn btn-outline-secondary" href="{% url 'achats:commandes' %}"><i class="bi bi-cart-check"></i> Commandes</a>
+</div>
+<div class="carte">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead><tr><th>Bon</th><th>Commande</th><th>Fournisseur</th><th>Date</th><th>Recu par</th><th class="text-end">Montant</th><th>Statut</th><th></th></tr></thead>
+            <tbody>
+            {% for r in page %}
+                <tr>
+                    <td><a class="fw-semibold text-decoration-none" href="{% url 'achats:reception_detail' r.pk %}">{{ r.numero_bon }}</a></td>
+                    <td>{{ r.commande.numero }}</td>
+                    <td>{{ r.commande.fournisseur.nom }}</td>
+                    <td>{{ r.date_reception|date:"d/m/Y H:i" }}</td>
+                    <td>{{ r.recu_par.username|default:"-" }}</td>
+                    <td class="text-end">{{ r.montant_total|floatformat:0 }} FCFA</td>
+                    <td>{% if r.est_validee %}<span class="badge bg-success">Validee</span>{% else %}<span class="badge bg-warning text-dark">En attente</span>{% endif %}</td>
+                    <td class="text-end"><a class="btn btn-sm btn-outline-secondary" href="{% url 'achats:reception_detail' r.pk %}"><i class="bi bi-eye"></i></a></td>
+                </tr>
+            {% empty %}
+                <tr><td colspan="8" class="text-center text-muted py-4">Aucune reception.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% include "includes/pagination.html" %}
+{% endblock %}
